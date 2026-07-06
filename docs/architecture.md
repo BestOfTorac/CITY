@@ -1,57 +1,96 @@
-﻿# CITY â€” Architecture
+# CITY - Architecture
 
 ## Overview
 
-CITY Ã¨ una piattaforma serverless a microservizi per la gestione intelligente delle emergenze in una smart city.
+CITY e' una piattaforma serverless a microservizi per la gestione intelligente delle emergenze in una smart city.
 
-## Main flows
+Il sistema ha due flussi principali:
 
-### Manual report flow
+1. segnalazione manuale da app Android;
+2. test telecamera simulata tramite AWS IoT Core.
+
+Entrambi i flussi convergono su Amazon SQS e poi su AWS Step Functions.
+
+## Manual report flow
 
 ```text
-Android app
-â†’ API Gateway HTTP
-â†’ receiveEmergency
-â†’ MobileIngestion, se Ã¨ presente una foto
-â†’ Rekognition
-â†’ SQS
-â†’ StartWorkflow
-â†’ Step Functions
+Android App
+|
+|-- POST /upload-url
+|   |-- GenerateMobileUploadUrl
+|   |-- S3 presigned URL
+|
+|-- upload immagine su S3 mobile/
+|
+|-- POST /emergency
+    |-- receiveEmergency
+    |-- MobileIngestion
+    |-- Amazon Rekognition
+    |-- Amazon SQS
+    |-- StartWorkflow
+    |-- Step Functions workflowEmergency
 ```
 
-### Camera test flow
+## Camera test flow
 
 ```text
-Android app
-â†’ API Gateway HTTP /test/camera
-â†’ cameraSimulator
-â†’ AWS IoT Core topic emergency/camera
-â†’ CameraIngestionRule
-â†’ lambdaIngestion
-â†’ Rekognition
-â†’ SQS
-â†’ StartWorkflow
-â†’ Step Functions
+Android App
+|
+|-- POST /test/camera
+    |-- cameraSimulator
+    |-- selezione immagine casuale da S3 dataset/
+    |-- pubblicazione su AWS IoT Core topic emergency/camera
+    |-- CameraIngestionRule
+    |-- lambdaIngestion
+    |-- Amazon Rekognition
+    |-- Amazon SQS
+    |-- StartWorkflow
+    |-- Step Functions workflowEmergency
 ```
 
-### Real-time status flow
+## Workflow Step Functions
 
 ```text
-Android app
-â†’ WebSocket subscribe(eventId)
-â†’ WebSocketHandler
-â†’ DynamoDB WebSocketSubscriptions
-â†’ SendStatusUpdate
-â†’ API Gateway Management API
-â†’ Android app
+ValidateEvent
+|
+|-- ContextualizeEvent
+|
+|-- ClassifyEvent
+|
+|-- EvaluateSeverity
+|
+|-- DecisionLogic
+|
+|-- FinalActions
+    |-- NotifyResponders via SNS
+    |-- SaveEmergencyData via DynamoDB
+    |-- StoreLogs via S3
+```
+
+## WebSocket status flow
+
+```text
+Android App
+|
+|-- WebSocket subscribe(eventId)
+|
+|-- WebSocketHandler
+|
+|-- DynamoDB WebSocketSubscriptions
+|
+|-- SendStatusUpdate
+|
+|-- API Gateway Management API
+|
+|-- Android App
 ```
 
 ## Microservice patterns
 
 - API Gateway pattern
 - Event-driven architecture
-- Publish/subscribe
 - Message queue
+- Publish/subscribe
 - Workflow orchestration
 - Shared state
 - Object storage
@@ -60,7 +99,7 @@ Android app
 ## Fault tolerance
 
 - SQS decouples ingestion from workflow execution.
-- Step Functions uses Retry and Catch.
+- Step Functions manages retry and catch logic.
 - WebSocket updates are non-blocking.
 - Final actions run in parallel.
 - Image archive failures are handled explicitly.

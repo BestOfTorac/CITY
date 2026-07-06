@@ -1,9 +1,9 @@
-﻿package com.toracshalby.emergencymobile.network
+package com.toracshalby.emergencymobile.network
 
 // Copiare questo file in:
 // app/src/main/java/com/toracshalby/emergencymobile/network/ApiConstants.kt
 //
-// Poi sostituire i placeholder con gli Outputs dello stack CloudFormation city-api.
+// Poi sostituire i placeholder con gli output dello stack CloudFormation city-api.
 
 const val WEBSOCKET_URL =
     "INSERISCI_OUTPUT_WEBSOCKET_ENDPOINT"
