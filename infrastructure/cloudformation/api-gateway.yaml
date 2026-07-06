@@ -1,0 +1,278 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CITY - API Gateway resources.
+  This stack creates the HTTP API and WebSocket API used by the Android app.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: city
+    AllowedPattern: "^[a-z0-9-]+$"
+
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedPattern: "^[a-z0-9-]+$"
+
+  LambdaStackName:
+    Type: String
+    Default: city-lambdas
+    Description: Name of the stack that created the Lambda functions.
+
+  HttpApiName:
+    Type: String
+    Default: EmergencyResponseAPI
+
+  WebSocketApiName:
+    Type: String
+    Default: EmergencyStatusWebSocket
+
+  WebSocketStageName:
+    Type: String
+    Default: production
+
+Resources:
+  EmergencyResponseHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Ref HttpApiName
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+        MaxAge: 300
+      Tags:
+        Project: !Ref ProjectName
+        Environment: !Ref EnvironmentName
+
+  EmergencyResponseHttpStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref EmergencyResponseHttpApi
+      StageName: "$default"
+      AutoDeploy: true
+      Tags:
+        Project: !Ref ProjectName
+        Environment: !Ref EnvironmentName
+
+  ReceiveEmergencyIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmergencyResponseHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri:
+        Fn::Sub:
+          - "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${FunctionName}/invocations"
+          - FunctionName:
+              Fn::ImportValue:
+                Fn::Sub: "${LambdaStackName}-ReceiveEmergencyFunctionName"
+
+  GenerateMobileUploadUrlIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmergencyResponseHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri:
+        Fn::Sub:
+          - "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${FunctionName}/invocations"
+          - FunctionName:
+              Fn::ImportValue:
+                Fn::Sub: "${LambdaStackName}-GenerateMobileUploadUrlFunctionName"
+
+  CameraSimulatorIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmergencyResponseHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri:
+        Fn::Sub:
+          - "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${FunctionName}/invocations"
+          - FunctionName:
+              Fn::ImportValue:
+                Fn::Sub: "${LambdaStackName}-CameraSimulatorFunctionName"
+
+  EmergencyRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmergencyResponseHttpApi
+      RouteKey: "POST /emergency"
+      Target: !Sub "integrations/${ReceiveEmergencyIntegration}"
+
+  UploadUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmergencyResponseHttpApi
+      RouteKey: "POST /upload-url"
+      Target: !Sub "integrations/${GenerateMobileUploadUrlIntegration}"
+
+  CameraTestRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmergencyResponseHttpApi
+      RouteKey: "POST /test/camera"
+      Target: !Sub "integrations/${CameraSimulatorIntegration}"
+
+  ReceiveEmergencyInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Fn::ImportValue:
+          Fn::Sub: "${LambdaStackName}-ReceiveEmergencyFunctionName"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EmergencyResponseHttpApi}/*/POST/emergency"
+
+  GenerateMobileUploadUrlInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Fn::ImportValue:
+          Fn::Sub: "${LambdaStackName}-GenerateMobileUploadUrlFunctionName"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EmergencyResponseHttpApi}/*/POST/upload-url"
+
+  CameraSimulatorInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Fn::ImportValue:
+          Fn::Sub: "${LambdaStackName}-CameraSimulatorFunctionName"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EmergencyResponseHttpApi}/*/POST/test/camera"
+
+  EmergencyStatusWebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Ref WebSocketApiName
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+      Tags:
+        Project: !Ref ProjectName
+        Environment: !Ref EnvironmentName
+
+  WebSocketHandlerIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmergencyStatusWebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      IntegrationUri:
+        Fn::Sub:
+          - "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}/invocations"
+          - FunctionArn:
+              Fn::ImportValue:
+                Fn::Sub: "${LambdaStackName}-WebSocketHandlerFunctionArn"
+
+  WebSocketConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmergencyStatusWebSocketApi
+      RouteKey: "$connect"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${WebSocketHandlerIntegration}"
+
+  WebSocketDisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmergencyStatusWebSocketApi
+      RouteKey: "$disconnect"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${WebSocketHandlerIntegration}"
+
+  WebSocketDefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmergencyStatusWebSocketApi
+      RouteKey: "$default"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${WebSocketHandlerIntegration}"
+
+  WebSocketSubscribeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmergencyStatusWebSocketApi
+      RouteKey: subscribe
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${WebSocketHandlerIntegration}"
+
+  EmergencyStatusWebSocketStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref EmergencyStatusWebSocketApi
+      StageName: !Ref WebSocketStageName
+      AutoDeploy: true
+      Tags:
+        Project: !Ref ProjectName
+        Environment: !Ref EnvironmentName
+
+  WebSocketHandlerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Fn::ImportValue:
+          Fn::Sub: "${LambdaStackName}-WebSocketHandlerFunctionArn"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EmergencyStatusWebSocketApi}/*/*"
+
+Outputs:
+  HttpApiId:
+    Description: HTTP API id.
+    Value: !Ref EmergencyResponseHttpApi
+    Export:
+      Name: !Sub "${AWS::StackName}-HttpApiId"
+
+  HttpApiEndpoint:
+    Description: HTTP API base endpoint.
+    Value: !Sub "https://${EmergencyResponseHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+    Export:
+      Name: !Sub "${AWS::StackName}-HttpApiEndpoint"
+
+  EmergencyEndpoint:
+    Description: Android manual emergency endpoint.
+    Value: !Sub "https://${EmergencyResponseHttpApi}.execute-api.${AWS::Region}.amazonaws.com/emergency"
+    Export:
+      Name: !Sub "${AWS::StackName}-EmergencyEndpoint"
+
+  UploadUrlEndpoint:
+    Description: Android presigned upload endpoint.
+    Value: !Sub "https://${EmergencyResponseHttpApi}.execute-api.${AWS::Region}.amazonaws.com/upload-url"
+    Export:
+      Name: !Sub "${AWS::StackName}-UploadUrlEndpoint"
+
+  CameraTestEndpoint:
+    Description: Android camera test endpoint.
+    Value: !Sub "https://${EmergencyResponseHttpApi}.execute-api.${AWS::Region}.amazonaws.com/test/camera"
+    Export:
+      Name: !Sub "${AWS::StackName}-CameraTestEndpoint"
+
+  WebSocketApiId:
+    Description: WebSocket API id.
+    Value: !Ref EmergencyStatusWebSocketApi
+    Export:
+      Name: !Sub "${AWS::StackName}-WebSocketApiId"
+
+  WebSocketEndpoint:
+    Description: Android WebSocket endpoint.
+    Value: !Sub "wss://${EmergencyStatusWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${WebSocketStageName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-WebSocketEndpoint"
+
+  WebSocketManagementEndpoint:
+    Description: Management endpoint used by SendStatusUpdate Lambda.
+    Value: !Sub "https://${EmergencyStatusWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${WebSocketStageName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-WebSocketManagementEndpoint"

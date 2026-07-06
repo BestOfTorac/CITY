@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CITY - Storage and messaging resources.
+  This stack creates S3, DynamoDB, SQS and SNS resources used by the CITY emergency response system.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: city
+    Description: Lowercase project name used in generated resource names.
+    AllowedPattern: "^[a-z0-9-]+$"
+
+  EnvironmentName:
+    Type: String
+    Default: dev
+    Description: Environment name, for example dev, test or prod.
+    AllowedPattern: "^[a-z0-9-]+$"
+
+  EmergencyImagesBucketName:
+    Type: String
+    Default: ""
+    Description: Optional custom S3 bucket name. Leave empty to generate a unique name.
+
+  EmergencyDataTableName:
+    Type: String
+    Default: EmergencyData
+    Description: DynamoDB table for processed emergency records.
+
+  WebSocketSubscriptionsTableName:
+    Type: String
+    Default: WebSocketSubscriptions
+    Description: DynamoDB table for WebSocket subscriptions.
+
+  WebSocketEventIdIndexName:
+    Type: String
+    Default: eventId-index
+    Description: Global secondary index used to find WebSocket connections by eventId.
+
+  WebSocketTtlAttributeName:
+    Type: String
+    Default: expiresAt
+    Description: TTL attribute for WebSocket subscription expiration.
+
+  EmergencyEventsQueueName:
+    Type: String
+    Default: emergency-events-queue
+    Description: SQS queue used to start the emergency workflow.
+
+  EmergencyEventsQueueRetentionSeconds:
+    Type: Number
+    Default: 345600
+    Description: SQS message retention period in seconds. Default is 4 days.
+
+  EmergencyEventsQueueVisibilityTimeoutSeconds:
+    Type: Number
+    Default: 30
+    Description: SQS visibility timeout in seconds.
+
+  EmergencyAlertsTopicName:
+    Type: String
+    Default: emergency-alerts-topic
+    Description: SNS topic used to notify responders.
+
+  NotificationEmail1:
+    Type: String
+    Default: ""
+    Description: Optional first email subscription for SNS notifications.
+
+  NotificationEmail2:
+    Type: String
+    Default: ""
+    Description: Optional second email subscription for SNS notifications.
+
+Conditions:
+  HasCustomBucketName: !Not [!Equals [!Ref EmergencyImagesBucketName, ""]]
+  HasNotificationEmail1: !Not [!Equals [!Ref NotificationEmail1, ""]]
+  HasNotificationEmail2: !Not [!Equals [!Ref NotificationEmail2, ""]]
+
+Resources:
+  EmergencyImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !If
+        - HasCustomBucketName
+        - !Ref EmergencyImagesBucketName
+        - !Sub "${ProjectName}-${EnvironmentName}-emergency-images-${AWS::AccountId}-${AWS::Region}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Suspended
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  EmergencyDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref EmergencyDataTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: eventId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: eventId
+          KeyType: HASH
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  WebSocketSubscriptionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref WebSocketSubscriptionsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: connectionId
+          AttributeType: S
+        - AttributeName: eventId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: connectionId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref WebSocketEventIdIndexName
+          KeySchema:
+            - AttributeName: eventId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: !Ref WebSocketTtlAttributeName
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  EmergencyEventsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref EmergencyEventsQueueName
+      MessageRetentionPeriod: !Ref EmergencyEventsQueueRetentionSeconds
+      VisibilityTimeout: !Ref EmergencyEventsQueueVisibilityTimeoutSeconds
+      DelaySeconds: 0
+      MaximumMessageSize: 1048576
+      SqsManagedSseEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  EmergencyAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref EmergencyAlertsTopicName
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  EmergencyAlertsSubscription1:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail1
+    Properties:
+      TopicArn: !Ref EmergencyAlertsTopic
+      Protocol: email
+      Endpoint: !Ref NotificationEmail1
+
+  EmergencyAlertsSubscription2:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail2
+    Properties:
+      TopicArn: !Ref EmergencyAlertsTopic
+      Protocol: email
+      Endpoint: !Ref NotificationEmail2
+
+Outputs:
+  EmergencyImagesBucketName:
+    Description: S3 bucket used for dataset, mobile uploads, captured images and event archive.
+    Value: !Ref EmergencyImagesBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-EmergencyImagesBucketName"
+
+  EmergencyDataTableName:
+    Description: DynamoDB table for emergency data.
+    Value: !Ref EmergencyDataTable
+    Export:
+      Name: !Sub "${AWS::StackName}-EmergencyDataTableName"
+
+  WebSocketSubscriptionsTableName:
+    Description: DynamoDB table for WebSocket subscriptions.
+    Value: !Ref WebSocketSubscriptionsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-WebSocketSubscriptionsTableName"
+
+  WebSocketEventIdIndexName:
+    Description: GSI name used by SendStatusUpdate.
+    Value: !Ref WebSocketEventIdIndexName
+    Export:
+      Name: !Sub "${AWS::StackName}-WebSocketEventIdIndexName"
+
+  EmergencyEventsQueueUrl:
+    Description: SQS queue URL.
+    Value: !Ref EmergencyEventsQueue
+    Export:
+      Name: !Sub "${AWS::StackName}-EmergencyEventsQueueUrl"
+
+  EmergencyEventsQueueArn:
+    Description: SQS queue ARN.
+    Value: !GetAtt EmergencyEventsQueue.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-EmergencyEventsQueueArn"
+
+  EmergencyAlertsTopicArn:
+    Description: SNS topic ARN.
+    Value: !Ref EmergencyAlertsTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-EmergencyAlertsTopicArn"

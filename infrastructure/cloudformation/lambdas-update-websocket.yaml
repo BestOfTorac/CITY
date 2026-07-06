@@ -1,0 +1,528 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CITY - Lambda functions.
+  This stack creates the Lambda functions used by the CITY emergency response system.
+  It expects the Lambda deployment zip files to be already uploaded to S3.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: city
+    AllowedPattern: "^[a-z0-9-]+$"
+
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedPattern: "^[a-z0-9-]+$"
+
+  StorageMessagingStackName:
+    Type: String
+    Default: city-storage-messaging
+    Description: Name of the stack that created S3, DynamoDB, SQS and SNS resources.
+
+  LabRoleName:
+    Type: String
+    Default: LabRole
+    Description: Name of the existing Learner Lab execution role.
+
+  LambdaCodeBucketName:
+    Type: String
+    Description: S3 bucket containing the Lambda zip files.
+
+  LambdaCodePrefix:
+    Type: String
+    Default: deployment/lambdas/
+    Description: S3 prefix containing Lambda zip files. Use empty string if zip files are at bucket root.
+
+  WorkflowStateMachineName:
+    Type: String
+    Default: workflowEmergency
+    Description: Name of the Step Functions state machine that will be created later.
+
+  DatasetPrefix:
+    Type: String
+    Default: dataset/
+
+  MobileUploadPrefix:
+    Type: String
+    Default: mobile
+
+  MobileUploadPrefixWithSlash:
+    Type: String
+    Default: mobile/
+
+  CapturedPrefix:
+    Type: String
+    Default: captured/
+
+  RekognitionMaxLabels:
+    Type: Number
+    Default: 10
+
+  RekognitionMinConfidence:
+    Type: Number
+    Default: 70
+
+  UploadUrlExpirationSeconds:
+    Type: Number
+    Default: 300
+
+  CameraPreviewUrlExpirationSeconds:
+    Type: Number
+    Default: 900
+
+  CameraIotTopic:
+    Type: String
+    Default: emergency/camera
+
+  IotDataEndpoint:
+    Type: String
+    Description: AWS IoT data endpoint, for example xxxxx-ats.iot.us-east-1.amazonaws.com
+
+  WebSocketStageName:
+    Type: String
+    Default: production
+
+  WebSocketManagementEndpoint:
+    Type: String
+    Default: "https://PLACEHOLDER.execute-api.us-east-1.amazonaws.com/production"
+    Description: Management endpoint of the WebSocket API, exported by the city-api stack.
+
+  WebSocketSubscriptionTtlSeconds:
+    Type: Number
+    Default: 7200
+
+  StatusUpdateMaxAttempts:
+    Type: Number
+    Default: 3
+
+  StatusUpdateRetryDelaySeconds:
+    Type: String
+    Default: "0.5"
+
+  LambdaMemorySize:
+    Type: Number
+    Default: 128
+
+  LambdaTimeoutSeconds:
+    Type: Number
+    Default: 30
+
+Mappings: {}
+
+Resources:
+  ReceiveEmergencyFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: receiveEmergency
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}receiveEmergency.zip"
+      Environment:
+        Variables:
+          MOBILE_INGESTION_FUNCTION_NAME: !Ref MobileIngestionFunction
+          STATE_MACHINE_ARN: !Sub "arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${WorkflowStateMachineName}"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  GenerateMobileUploadUrlFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: GenerateMobileUploadUrl
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}GenerateMobileUploadUrl.zip"
+      Environment:
+        Variables:
+          BUCKET:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyImagesBucketName"
+          PREFIX: !Ref MobileUploadPrefix
+          URL_EXPIRATION_SECONDS: !Ref UploadUrlExpirationSeconds
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  MobileIngestionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: MobileIngestion
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}MobileIngestion.zip"
+      Environment:
+        Variables:
+          ALLOWED_BUCKET:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyImagesBucketName"
+          ALLOWED_PREFIX: !Ref MobileUploadPrefixWithSlash
+          MAX_LABELS: !Ref RekognitionMaxLabels
+          MIN_CONFIDENCE: !Ref RekognitionMinConfidence
+          QUEUE_URL:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyEventsQueueUrl"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  CameraSimulatorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: cameraSimulator
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}cameraSimulator.zip"
+      Environment:
+        Variables:
+          BUCKET:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyImagesBucketName"
+          DATASET_PREFIX: !Ref DatasetPrefix
+          IOT_ENDPOINT: !Ref IotDataEndpoint
+          PRESIGNED_URL_EXPIRATION: !Ref CameraPreviewUrlExpirationSeconds
+          TOPIC: !Ref CameraIotTopic
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  LambdaIngestionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: lambdaIngestion
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}lambdaIngestion.zip"
+      Environment:
+        Variables:
+          DESTINATION_BUCKET:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyImagesBucketName"
+          CAPTURED_PREFIX: !Ref CapturedPrefix
+          QUEUE_URL:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyEventsQueueUrl"
+          STATUS_UPDATE_FUNCTION: !Ref SendStatusUpdateFunction
+          STATUS_UPDATE_MAX_ATTEMPTS: !Ref StatusUpdateMaxAttempts
+          STATUS_UPDATE_RETRY_DELAY_SECONDS: !Ref StatusUpdateRetryDelaySeconds
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  StartWorkflowFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: StartWorkflow
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}StartWorkflow.zip"
+      Environment:
+        Variables:
+          DEFAULT_BUCKET:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyImagesBucketName"
+          STATE_MACHINE_ARN: !Sub "arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${WorkflowStateMachineName}"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ValidateEventFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ValidateEvent
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}ValidateEvent.zip"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ContextualizeEventFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ContextualizeEvent
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}ContextualizeEvent.zip"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ClassifyEventFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ClassifyEvent
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}ClassifyEvent.zip"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  EvaluateSeverityFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: EvaluateSeverity
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}EvaluateSeverity.zip"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  DecisionLogicFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: DecisionLogic
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}DecisionLogic.zip"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  StoreLogsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: StoreLogs
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}StoreLogs.zip"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  SendStatusUpdateFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SendStatusUpdate
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}SendStatusUpdate.zip"
+      Environment:
+        Variables:
+          EVENT_ID_INDEX:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-WebSocketEventIdIndexName"
+          TABLE_NAME:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-WebSocketSubscriptionsTableName"
+          WEBSOCKET_ENDPOINT: !Ref WebSocketManagementEndpoint
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  WebSocketHandlerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: WebSocketHandler
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${LabRoleName}"
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref LambdaCodeBucketName
+        S3Key: !Sub "${LambdaCodePrefix}WebSocketHandler.zip"
+      Environment:
+        Variables:
+          SUBSCRIPTION_TTL_SECONDS: !Ref WebSocketSubscriptionTtlSeconds
+          TABLE_NAME:
+            Fn::ImportValue: !Sub "${StorageMessagingStackName}-WebSocketSubscriptionsTableName"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  StartWorkflowEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      FunctionName: !Ref StartWorkflowFunction
+      EventSourceArn:
+        Fn::ImportValue: !Sub "${StorageMessagingStackName}-EmergencyEventsQueueArn"
+      BatchSize: 1
+      Enabled: true
+      FunctionResponseTypes:
+        - ReportBatchItemFailures
+
+Outputs:
+  ReceiveEmergencyFunctionName:
+    Value: !Ref ReceiveEmergencyFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-ReceiveEmergencyFunctionName"
+
+  GenerateMobileUploadUrlFunctionName:
+    Value: !Ref GenerateMobileUploadUrlFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-GenerateMobileUploadUrlFunctionName"
+
+  MobileIngestionFunctionName:
+    Value: !Ref MobileIngestionFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-MobileIngestionFunctionName"
+
+  CameraSimulatorFunctionName:
+    Value: !Ref CameraSimulatorFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-CameraSimulatorFunctionName"
+
+  LambdaIngestionFunctionName:
+    Value: !Ref LambdaIngestionFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaIngestionFunctionName"
+
+  StartWorkflowFunctionName:
+    Value: !Ref StartWorkflowFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-StartWorkflowFunctionName"
+
+  ValidateEventFunctionArn:
+    Value: !GetAtt ValidateEventFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ValidateEventFunctionArn"
+
+  ContextualizeEventFunctionArn:
+    Value: !GetAtt ContextualizeEventFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ContextualizeEventFunctionArn"
+
+  ClassifyEventFunctionArn:
+    Value: !GetAtt ClassifyEventFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ClassifyEventFunctionArn"
+
+  EvaluateSeverityFunctionArn:
+    Value: !GetAtt EvaluateSeverityFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-EvaluateSeverityFunctionArn"
+
+  DecisionLogicFunctionArn:
+    Value: !GetAtt DecisionLogicFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-DecisionLogicFunctionArn"
+
+  StoreLogsFunctionArn:
+    Value: !GetAtt StoreLogsFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-StoreLogsFunctionArn"
+
+  SendStatusUpdateFunctionArn:
+    Value: !GetAtt SendStatusUpdateFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-SendStatusUpdateFunctionArn"
+
+  WebSocketHandlerFunctionArn:
+    Value: !GetAtt WebSocketHandlerFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-WebSocketHandlerFunctionArn"

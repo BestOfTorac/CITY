@@ -1,0 +1,581 @@
+{
+  "Comment": "Emergency Response workflow",
+  "StartAt": "ValidateEvent",
+  "States": {
+    "ValidateEvent": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:ValidateEvent:$LATEST",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Next": "CheckValidation"
+    },
+    "CheckValidation": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "SendValidatedStatus",
+          "Variable": "$.validation.valid",
+          "BooleanEquals": true
+        }
+      ],
+      "Default": "SendInvalidStatus"
+    },
+    "ContextualizeEvent": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:ContextualizeEvent:$LATEST",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Next": "CheckContextualization"
+    },
+    "CheckContextualization": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "SendContextualizedStatus",
+          "Variable": "$.contextualization.status",
+          "StringEquals": "COMPLETED"
+        }
+      ],
+      "Default": "SendProcessingFailedStatus"
+    },
+    "ClassifyEvent": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:ClassifyEvent:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "CheckClassification"
+    },
+    "CheckClassification": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "SendClassifiedStatus",
+          "Variable": "$.classification.status",
+          "StringEquals": "COMPLETED"
+        }
+      ],
+      "Default": "SendProcessingFailedStatus"
+    },
+    "EvaluateSeverity": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:EvaluateSeverity:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "CheckSeverity"
+    },
+    "CheckSeverity": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "SendSeverityStatus",
+          "Variable": "$.severity.status",
+          "StringEquals": "COMPLETED"
+        }
+      ],
+      "Default": "SendProcessingFailedStatus"
+    },
+    "DecisionLogic": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:DecisionLogic:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "CheckDecision"
+    },
+    "CheckDecision": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "SendDecisionStatus",
+          "Variable": "$.decision.status",
+          "StringEquals": "COMPLETED"
+        }
+      ],
+      "Default": "SendProcessingFailedStatus"
+    },
+    "FinalActions": {
+      "Type": "Parallel",
+      "Next": "SendCompletedStatus",
+      "Branches": [
+        {
+          "StartAt": "CheckNotification",
+          "States": {
+            "CheckNotification": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "NotifyResponders",
+                  "Variable": "$.decision.shouldNotify",
+                  "BooleanEquals": true
+                }
+              ],
+              "Default": "SkipNotification"
+            },
+            "NotifyResponders": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "TopicArn": "arn:aws:sns:us-east-1:620333538289:emergency-alerts-topic",
+                "Message.$": "$.decision.notification.message",
+                "Subject.$": "$.decision.notification.subject"
+              },
+              "ResultPath": "$.notificationResult",
+              "Next": "SendRespondersNotifiedStatus"
+            },
+            "SkipNotification": {
+              "Type": "Pass",
+              "End": true
+            },
+            "SendRespondersNotifiedStatus": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+                "Payload": {
+                  "eventId.$": "$.eventId",
+                  "status": "RESPONDERS_NOTIFIED",
+                  "progress": 97,
+                  "message": "Soccorritori notificati correttamente"
+                }
+              },
+              "ResultPath": null,
+              "Next": "NotificationBranchCompleted",
+              "Catch": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "ResultPath": null,
+                  "Next": "NotificationBranchCompleted"
+                }
+              ]
+            },
+            "NotificationBranchCompleted": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "SaveEmergencyData",
+          "States": {
+            "SaveEmergencyData": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "EmergencyData",
+                "Item": {
+                  "eventId": {
+                    "S.$": "$.decision.databaseRecord.eventId"
+                  },
+                  "timestamp": {
+                    "S.$": "$.decision.databaseRecord.timestamp"
+                  },
+                  "source": {
+                    "S.$": "$.decision.databaseRecord.source"
+                  },
+                  "location": {
+                    "S.$": "$.decision.databaseRecord.location"
+                  },
+                  "eventType": {
+                    "S.$": "$.decision.databaseRecord.eventType"
+                  },
+                  "severityLevel": {
+                    "S.$": "$.decision.databaseRecord.severityLevel"
+                  },
+                  "processingStatus": {
+                    "S.$": "$.decision.databaseRecord.processingStatus"
+                  },
+                  "decidedAt": {
+                    "S.$": "$.decision.databaseRecord.decidedAt"
+                  },
+                  "classificationConfidence": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.classificationConfidence)"
+                  },
+                  "fireScore": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.fireScore)"
+                  },
+                  "accidentScore": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.accidentScore)"
+                  },
+                  "severityScore": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.severityScore)"
+                  },
+                  "priority": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.priority)"
+                  },
+                  "ambulances": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.ambulances)"
+                  },
+                  "patrols": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.patrols)"
+                  },
+                  "fireBrigade": {
+                    "N.$": "States.Format('{}', $.decision.databaseRecord.fireBrigade)"
+                  },
+                  "notificationRequired": {
+                    "BOOL.$": "$.decision.databaseRecord.notificationRequired"
+                  },
+                  "eventDetailsJson": {
+                    "S.$": "$.decision.databaseRecord.eventDetailsJson"
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CheckImageArchive",
+          "States": {
+            "CheckImageArchive": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "StoreLogs",
+                  "Variable": "$.decision.shouldArchiveImage",
+                  "BooleanEquals": true
+                }
+              ],
+              "Default": "SkipImageArchive"
+            },
+            "StoreLogs": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "OutputPath": "$.Payload",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:StoreLogs:$LATEST"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "CheckStoreLogs"
+            },
+            "CheckStoreLogs": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "ImageArchiveCompleted",
+                  "Variable": "$.storeLogs.status",
+                  "StringEquals": "COMPLETED"
+                }
+              ],
+              "Default": "SendImageArchiveFailedStatus"
+            },
+            "ImageArchiveCompleted": {
+              "Type": "Pass",
+              "End": true
+            },
+            "ImageArchiveFailed": {
+              "Type": "Fail",
+              "Error": "ImageArchiveFailed",
+              "Cause": "StoreLogs non ha completato l'archiviazione dell'immagine"
+            },
+            "SkipImageArchive": {
+              "Type": "Pass",
+              "End": true
+            },
+            "SendImageArchiveFailedStatus": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+                "Payload": {
+                  "eventId.$": "$.eventId",
+                  "status": "IMAGE_ARCHIVE_FAILED",
+                  "progress": 100,
+                  "message": "L'emergenza è stata elaborata, ma l'archiviazione dell'immagine non è riuscita"
+                }
+              },
+              "ResultPath": null,
+              "Next": "ImageArchiveFailed",
+              "Catch": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "ResultPath": null,
+                  "Next": "ImageArchiveFailed"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "ResultPath": "$.finalActions"
+    },
+    "Completato correttamente": {
+      "Type": "Succeed"
+    },
+    "ProcessingFailed": {
+      "Type": "Fail",
+      "Error": "EmergencyProcessingFailed",
+      "Cause": "Contextualization was not completed"
+    },
+    "InvalidEmergency": {
+      "Type": "Fail",
+      "Error": "InvalidEmergencyData",
+      "Cause": "Missing required fields"
+    },
+    "SendValidatedStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "VALIDATED",
+          "progress": 60,
+          "message": "Validazione della segnalazione completata"
+        }
+      },
+      "ResultPath": null,
+      "Next": "ContextualizeEvent",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "ContextualizeEvent"
+        }
+      ]
+    },
+    "SendContextualizedStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "CONTEXTUALIZED",
+          "progress": 70,
+          "message": "Contestualizzazione dell'emergenza completata"
+        }
+      },
+      "ResultPath": null,
+      "Next": "ClassifyEvent",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "ClassifyEvent"
+        }
+      ]
+    },
+    "SendClassifiedStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "CLASSIFIED",
+          "progress": 80,
+          "message": "Classificazione dell'emergenza completata"
+        }
+      },
+      "ResultPath": null,
+      "Next": "EvaluateSeverity",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "EvaluateSeverity"
+        }
+      ]
+    },
+    "SendSeverityStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "SEVERITY_EVALUATED",
+          "progress": 88,
+          "message": "Valutazione della gravità completata"
+        }
+      },
+      "ResultPath": null,
+      "Next": "DecisionLogic",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "DecisionLogic"
+        }
+      ]
+    },
+    "SendDecisionStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "DECISION_COMPLETED",
+          "progress": 94,
+          "message": "Decisione operativa completata"
+        }
+      },
+      "ResultPath": null,
+      "Next": "FinalActions",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "FinalActions"
+        }
+      ]
+    },
+    "SendCompletedStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "COMPLETED",
+          "progress": 100,
+          "message": "Elaborazione dell'emergenza completata"
+        }
+      },
+      "ResultPath": null,
+      "Next": "Completato correttamente",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "Completato correttamente"
+        }
+      ]
+    },
+    "SendInvalidStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "INVALID_EMERGENCY",
+          "progress": 100,
+          "message": "La segnalazione non contiene tutti i dati necessari"
+        }
+      },
+      "ResultPath": null,
+      "Next": "InvalidEmergency",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "InvalidEmergency"
+        }
+      ]
+    },
+    "SendProcessingFailedStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:620333538289:function:SendStatusUpdate:$LATEST",
+        "Payload": {
+          "eventId.$": "$.eventId",
+          "status": "PROCESSING_FAILED",
+          "progress": 100,
+          "message": "Si è verificato un errore durante l'elaborazione dell'emergenza"
+        }
+      },
+      "ResultPath": null,
+      "Next": "ProcessingFailed",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "ProcessingFailed"
+        }
+      ]
+    }
+  }
+}
