@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.network
+﻿package com.toracshalby.emergencymobile.network
 
 import com.toracshalby.emergencymobile.model.EmergencyReportDraft
 import com.toracshalby.emergencymobile.model.EmergencySubmissionResponse

@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 
 import boto3
@@ -18,7 +18,7 @@ EVENT_ID_INDEX = os.environ.get(
 
 WEBSOCKET_ENDPOINT = os.environ.get(
     "WEBSOCKET_ENDPOINT",
-    "https://k0jbltzn00.execute-api.us-east-1.amazonaws.com/production"
+    "INSERISCI_VECCHIO_WEBSOCKET_MANAGEMENT_ENDPOINT"
 )
 
 dynamodb = boto3.resource("dynamodb")
@@ -40,13 +40,13 @@ def validate_event(event):
     progress = event.get("progress")
 
     if not isinstance(event_id, str) or not event_id.strip():
-        raise ValueError("eventId è obbligatorio")
+        raise ValueError("eventId Ã¨ obbligatorio")
 
     if not isinstance(status, str) or not status.strip():
-        raise ValueError("status è obbligatorio")
+        raise ValueError("status Ã¨ obbligatorio")
 
     if not isinstance(message, str) or not message.strip():
-        raise ValueError("message è obbligatorio")
+        raise ValueError("message Ã¨ obbligatorio")
 
     if isinstance(progress, bool) or not isinstance(progress, (int, float)):
         raise ValueError("progress deve essere numerico")

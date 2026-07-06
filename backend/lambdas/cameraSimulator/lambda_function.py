@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import random
 import re
@@ -49,7 +49,7 @@ CAMERAS = [
     {
         "cameraId": "CAM02",
         "location":
-            "Parcheggio Facoltà di Ingegneria"
+            "Parcheggio FacoltÃ  di Ingegneria"
     },
     {
         "cameraId": "CAM03",
@@ -196,8 +196,8 @@ def resolve_event_ids(event):
             "lettere, numeri, trattini o underscore"
         )
 
-    # Manteniamo testId per compatibilità con
-    # lambdaIngestion e StartWorkflow già esistenti.
+    # Manteniamo testId per compatibilitÃ  con
+    # lambdaIngestion e StartWorkflow giÃ  esistenti.
     test_id = event_id.removeprefix(
         "camera-"
     )
@@ -295,7 +295,7 @@ def lambda_handler(event, context):
             "eventId":
                 event_id,
 
-            # Campo mantenuto per compatibilità
+            # Campo mantenuto per compatibilitÃ 
             # con il vecchio ramo telecamera.
             "testId":
                 test_id,

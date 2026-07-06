@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+﻿AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   CITY - API Gateway resources.
   This stack creates the HTTP API and WebSocket API used by the Android app.

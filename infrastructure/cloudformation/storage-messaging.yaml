@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+﻿AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   CITY - Storage and messaging resources.
   This stack creates S3, DynamoDB, SQS and SNS resources used by the CITY emergency response system.

@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile
+﻿package com.toracshalby.emergencymobile
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -513,7 +513,7 @@ fun EmergencyMobileApp() {
                                         response.cameraId,
                                         response.location
                                     ).joinToString(
-                                        separator = " · "
+                                        separator = " Â· "
                                     )
 
                                 if (
@@ -549,7 +549,7 @@ fun EmergencyMobileApp() {
                                         eventId =
                                             eventId,
                                         message =
-                                            "Il canale WebSocket non è diventato pronto in tempo.",
+                                            "Il canale WebSocket non Ã¨ diventato pronto in tempo.",
                                         progress =
                                             statusUpdate
                                                 .progress

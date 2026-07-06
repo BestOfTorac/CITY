@@ -1,4 +1,4 @@
-import json
+﻿import json
 import re
 import unicodedata
 from datetime import datetime
@@ -544,7 +544,7 @@ def build_mobile_context(event):
     caricata dall'utente, quando presenti.
 
     Manteniamo sourceType = HUMAN_REPORT per non rompere
-    le Lambda successive già progettate per form e Lex.
+    le Lambda successive giÃ  progettate per form e Lex.
     """
 
     unified_context = build_human_context(
@@ -561,7 +561,7 @@ def build_mobile_context(event):
         "visualAnalysis"
     )
 
-    # La foto è facoltativa. In sua assenza il contesto
+    # La foto Ã¨ facoltativa. In sua assenza il contesto
     # resta un normale report umano.
     if (
         not isinstance(image_data, dict)

@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import time
 from datetime import datetime, timezone
@@ -371,7 +371,7 @@ def lambda_handler(event, context):
         sqs_message.update({
             "eventId": event_id,
 
-            # Conservato per compatibilità
+            # Conservato per compatibilitÃ 
             # con il flusso SQS esistente.
             "testId": event_id,
 
@@ -451,7 +451,7 @@ def lambda_handler(event, context):
         )
 
         # L'aggiornamento viene inviato prima di SQS,
-        # così il 50% arriva prima degli stati
+        # cosÃ¬ il 50% arriva prima degli stati
         # prodotti dalla Step Function.
         status_update_sent = (
             invoke_status_update(
@@ -459,7 +459,7 @@ def lambda_handler(event, context):
             )
         )
 
-        # Anche se il telefono non è connesso,
+        # Anche se il telefono non Ã¨ connesso,
         # il flusso principale deve continuare.
         sqs_response = (
             sqs.send_message(

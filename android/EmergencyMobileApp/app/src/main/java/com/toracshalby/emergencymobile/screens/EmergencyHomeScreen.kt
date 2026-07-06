@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.screens
+﻿package com.toracshalby.emergencymobile.screens
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -156,8 +156,8 @@ fun EmergencyHomeScreen(
             title = "Avvia telecamera",
             description =
                 "Simula una telecamera IoT e avvia il percorso automatico.",
-            badge = "Modalità di test",
-            icon = "◉",
+            badge = "ModalitÃ  di test",
+            icon = "â—‰",
             accentColor = AppPurple,
             accentDarkColor =
                 AppPurpleDark,
@@ -201,7 +201,7 @@ fun EmergencyHomeScreen(
                             Alignment.Center
                     ) {
                         Text(
-                            text = "✓",
+                            text = "âœ“",
                             color = AppPurple,
                             fontWeight =
                                 FontWeight.Bold
@@ -215,7 +215,7 @@ fun EmergencyHomeScreen(
                 ) {
                     Text(
                         text =
-                            "La tua sicurezza è importante",
+                            "La tua sicurezza Ã¨ importante",
                         fontWeight =
                             FontWeight.SemiBold,
                         color = AppText
@@ -337,7 +337,7 @@ private fun HomeActionCard(
                             Alignment.Center
                     ) {
                         Text(
-                            text = "›",
+                            text = "â€º",
                             style =
                                 MaterialTheme.typography
                                     .headlineMedium,

@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.screens
+﻿package com.toracshalby.emergencymobile.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -62,7 +62,7 @@ fun CameraTestScreen(
             onClick = onBackToHome
         ) {
             Text(
-                text = "← Torna alla home",
+                text = "â† Torna alla home",
                 color = AppPurpleDark,
                 fontWeight =
                     FontWeight.SemiBold
@@ -87,7 +87,7 @@ fun CameraTestScreen(
                         Alignment.Center
                 ) {
                     Text(
-                        text = "◉",
+                        text = "â—‰",
                         style =
                             MaterialTheme.typography
                                 .headlineMedium,
@@ -143,7 +143,7 @@ fun CameraTestScreen(
                     Arrangement.spacedBy(14.dp)
             ) {
                 Text(
-                    text = "Cosa verrà testato",
+                    text = "Cosa verrÃ  testato",
                     style =
                         MaterialTheme.typography
                             .titleMedium,
@@ -206,8 +206,8 @@ fun CameraTestScreen(
                 text =
                     "Il test usa una telecamera simulata: " +
                             "non apre la fotocamera del telefono. " +
-                            "AWS selezionerà un'immagine dal dataset " +
-                            "e la elaborerà come una cattura automatica.",
+                            "AWS selezionerÃ  un'immagine dal dataset " +
+                            "e la elaborerÃ  come una cattura automatica.",
                 modifier =
                     Modifier.padding(16.dp),
                 color = AppPurpleDark

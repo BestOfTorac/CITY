@@ -1,4 +1,4 @@
-# Android app
+﻿# Android app
 
 Inserire qui il progetto Android `EmergencyMobile`.
 

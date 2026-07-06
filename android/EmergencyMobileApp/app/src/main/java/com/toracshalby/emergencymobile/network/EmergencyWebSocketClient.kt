@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.network
+﻿package com.toracshalby.emergencymobile.network
 
 import android.os.Handler
 import android.os.Looper

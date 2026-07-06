@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile
+﻿package com.toracshalby.emergencymobile
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.utils
+﻿package com.toracshalby.emergencymobile.utils
 
 import android.content.Context
 import android.graphics.BitmapFactory

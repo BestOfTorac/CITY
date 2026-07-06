@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile
+﻿package com.toracshalby.emergencymobile
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

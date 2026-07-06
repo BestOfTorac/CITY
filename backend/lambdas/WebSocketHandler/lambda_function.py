@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import time
 from datetime import datetime, timezone
@@ -355,7 +355,7 @@ def lambda_handler(
         print(str(error))
 
         # La connessione potrebbe essere
-        # già chiusa.
+        # giÃ  chiusa.
         if error_code == (
             "GoneException"
         ):

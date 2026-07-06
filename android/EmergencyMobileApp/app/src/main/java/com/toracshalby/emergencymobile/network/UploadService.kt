@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.network
+﻿package com.toracshalby.emergencymobile.network
 
 import android.content.Context
 import android.net.Uri
@@ -168,7 +168,7 @@ suspend fun uploadImageToS3(
 
     if (imageBytes.isEmpty()) {
         throw IOException(
-            "La fotografia selezionata è vuota."
+            "La fotografia selezionata Ã¨ vuota."
         )
     }
 

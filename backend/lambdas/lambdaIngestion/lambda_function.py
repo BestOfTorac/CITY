@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import time
 from datetime import datetime, timezone
@@ -91,7 +91,7 @@ def classify_event(labels):
 def resolve_event_id(event):
     """
     Usa eventId quando arriva dal nuovo ramo app.
-    Mantiene la compatibilità con il vecchio ramo che
+    Mantiene la compatibilitÃ  con il vecchio ramo che
     forniva soltanto testId.
     """
 
@@ -126,7 +126,7 @@ def resolve_event_id(event):
 def send_image_analyzed_status(event_id):
     """
     Invia il 50% all'app senza bloccare il flusso
-    principale quando il WebSocket non è disponibile.
+    principale quando il WebSocket non Ã¨ disponibile.
     """
 
     payload = {
@@ -382,7 +382,7 @@ def lambda_handler(event, context):
             "eventId":
                 event_id,
 
-            # Conservato per compatibilità
+            # Conservato per compatibilitÃ 
             # con il vecchio ramo telecamera.
             "testId":
                 test_id,
@@ -430,7 +430,7 @@ def lambda_handler(event, context):
         }
 
         # Il 50% viene inviato dopo Rekognition e prima
-        # dell'invio a SQS, così precede gli stati
+        # dell'invio a SQS, cosÃ¬ precede gli stati
         # prodotti dalla Step Function.
         status_update_sent = (
             send_image_analyzed_status(

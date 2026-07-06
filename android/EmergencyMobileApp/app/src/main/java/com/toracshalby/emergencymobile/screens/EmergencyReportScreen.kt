@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.screens
+﻿package com.toracshalby.emergencymobile.screens
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -180,7 +180,7 @@ fun EmergencyReportForm(
             onClick = onBackToHome
         ) {
             Text(
-                text = "← Torna alla home",
+                text = "â† Torna alla home",
                 color = AppPurpleDark,
                 fontWeight =
                     FontWeight.SemiBold
@@ -200,7 +200,7 @@ fun EmergencyReportForm(
             ) {
                 ModernChoiceChip(
                     label = "Incendio",
-                    icon = "🔥",
+                    icon = "ðŸ”¥",
                     selected =
                         reportedType == "FIRE",
                     modifier =
@@ -212,7 +212,7 @@ fun EmergencyReportForm(
 
                 ModernChoiceChip(
                     label = "Incidente",
-                    icon = "🚗",
+                    icon = "ðŸš—",
                     selected =
                         reportedType == "ACCIDENT",
                     modifier =
@@ -254,7 +254,7 @@ fun EmergencyReportForm(
                 },
                 leadingIcon = {
                     Text(
-                        text = "📍",
+                        text = "ðŸ“",
                         style =
                             MaterialTheme.typography
                                 .titleMedium
@@ -378,7 +378,7 @@ fun EmergencyReportForm(
                             Alignment.Center
                     ) {
                         Text(
-                            text = "📷",
+                            text = "ðŸ“·",
                             style =
                                 MaterialTheme.typography
                                     .titleLarge
@@ -420,7 +420,7 @@ fun EmergencyReportForm(
                 }
 
                 Text(
-                    text = "›",
+                    text = "â€º",
                     style =
                         MaterialTheme.typography
                             .headlineSmall,
@@ -543,7 +543,7 @@ fun EmergencyReportForm(
         ) {
             Text(
                 text =
-                    "☁  Prepara segnalazione e carica foto",
+                    "â˜  Prepara segnalazione e carica foto",
                 style =
                     MaterialTheme.typography
                         .titleMedium,
@@ -601,7 +601,7 @@ fun EmergencyReportForm(
                             RoundedCornerShape(14.dp)
                     ) {
                         Text(
-                            "🖼  Scegli dalla galleria"
+                            "ðŸ–¼  Scegli dalla galleria"
                         )
                     }
 
@@ -646,7 +646,7 @@ fun EmergencyReportForm(
                             )
                     ) {
                         Text(
-                            "📷  Scatta una foto"
+                            "ðŸ“·  Scatta una foto"
                         )
                     }
                 }

@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.ui.theme
+﻿package com.toracshalby.emergencymobile.ui.theme
 
 import android.content.Context
 import android.graphics.BitmapFactory

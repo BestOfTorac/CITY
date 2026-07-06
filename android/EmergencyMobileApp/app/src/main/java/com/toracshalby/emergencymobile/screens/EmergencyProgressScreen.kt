@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.screens
+﻿package com.toracshalby.emergencymobile.screens
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
@@ -169,10 +169,10 @@ fun EmergencyProgressScreen(
 
     val resultIcon =
         when {
-            isFatalError -> "×"
+            isFatalError -> "Ã—"
             isArchiveWarning -> "!"
-            isCompleted -> "✓"
-            else -> "↗"
+            isCompleted -> "âœ“"
+            else -> "â†—"
         }
 
     val statusTitle =
@@ -250,7 +250,7 @@ fun EmergencyProgressScreen(
                     "Emergenza classificata" to 80
                 )
                 add(
-                    "Gravità valutata" to 88
+                    "GravitÃ  valutata" to 88
                 )
                 add(
                     "Decisione operativa completata" to 94
@@ -352,13 +352,13 @@ fun EmergencyProgressScreen(
                         when {
                             isFatalError ->
                                 if (isCameraTest) {
-                                    "Il test automatico non è stato completato"
+                                    "Il test automatico non Ã¨ stato completato"
                                 } else {
-                                    "La segnalazione non è stata completata"
+                                    "La segnalazione non Ã¨ stata completata"
                                 }
 
                             isArchiveWarning ->
-                                "L'emergenza è stata gestita, ma resta un problema"
+                                "L'emergenza Ã¨ stata gestita, ma resta un problema"
 
                             isCompleted ->
                                 "Tutte le operazioni sono terminate"
@@ -827,7 +827,7 @@ private fun CameraSelectedImageCard(
                     cameraId,
                     cameraLocation
                 ).joinToString(
-                    separator = " · "
+                    separator = " Â· "
                 )
 
             if (cameraDetails.isNotBlank()) {
@@ -950,7 +950,7 @@ private fun ConnectionBadge(
     ) {
         Text(
             text =
-                "● $connectionStatus",
+                "â— $connectionStatus",
             modifier =
                 Modifier.padding(
                     horizontal = 12.dp,
@@ -989,11 +989,11 @@ private fun StatusStep(
 
     val icon =
         when (state) {
-            StepVisualState.ACTIVE -> "●"
-            StepVisualState.COMPLETED -> "✓"
-            StepVisualState.ERROR -> "×"
+            StepVisualState.ACTIVE -> "â—"
+            StepVisualState.COMPLETED -> "âœ“"
+            StepVisualState.ERROR -> "Ã—"
             StepVisualState.WARNING -> "!"
-            StepVisualState.PENDING -> "○"
+            StepVisualState.PENDING -> "â—‹"
         }
 
     val iconColor =
@@ -1147,7 +1147,7 @@ private fun humanReadableStatus(
             "Emergenza classificata"
 
         "SEVERITY_EVALUATED" ->
-            "Gravità valutata"
+            "GravitÃ  valutata"
 
         "DECISION_COMPLETED" ->
             "Decisione operativa completata"

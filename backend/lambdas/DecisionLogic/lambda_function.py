@@ -1,4 +1,4 @@
-import json
+﻿import json
 import posixpath
 from datetime import datetime, timezone
 
@@ -272,7 +272,7 @@ def build_response_plan(
         require_units(
             plan["ambulances"],
             2,
-            "La gravità dell'evento è critica"
+            "La gravitÃ  dell'evento Ã¨ critica"
         )
 
     # -------------------------
@@ -286,7 +286,7 @@ def build_response_plan(
         require_units(
             plan["patrols"],
             1,
-            "È stato rilevato un incidente stradale"
+            "Ãˆ stato rilevato un incidente stradale"
         )
 
     if road_blocked:
@@ -334,7 +334,7 @@ def build_response_plan(
         require_units(
             plan["patrols"],
             2,
-            "L'incidente ha gravità critica"
+            "L'incidente ha gravitÃ  critica"
         )
 
     # -------------------------
@@ -348,7 +348,7 @@ def build_response_plan(
         require_units(
             plan["fireBrigade"],
             1,
-            "È stato rilevato un incendio"
+            "Ãˆ stato rilevato un incendio"
         )
 
     if flames_visible:
@@ -376,14 +376,14 @@ def build_response_plan(
         require_units(
             plan["fireBrigade"],
             1,
-            "È stato segnalato un veicolo in fiamme"
+            "Ãˆ stato segnalato un veicolo in fiamme"
         )
 
     if vehicle_overturned:
         require_units(
             plan["fireBrigade"],
             1,
-            "È presente un veicolo ribaltato"
+            "Ãˆ presente un veicolo ribaltato"
         )
 
     if trapped:
@@ -397,14 +397,14 @@ def build_response_plan(
         require_units(
             plan["fireBrigade"],
             1,
-            "È stata segnalata una perdita di carburante"
+            "Ãˆ stata segnalata una perdita di carburante"
         )
 
     if explosion_reported:
         require_units(
             plan["fireBrigade"],
             2,
-            "È stata segnalata un'esplosione"
+            "Ãˆ stata segnalata un'esplosione"
         )
 
     if spreading and building_involved:
@@ -421,7 +421,7 @@ def build_response_plan(
         require_units(
             plan["fireBrigade"],
             2,
-            "L'incendio ha gravità critica"
+            "L'incendio ha gravitÃ  critica"
         )
 
     return plan
@@ -469,7 +469,7 @@ def build_observations(
 
     if human_risk.get("immediateDanger") is True:
         observations.append(
-            "È stato segnalato un pericolo immediato"
+            "Ãˆ stato segnalato un pericolo immediato"
         )
 
     if human_risk.get("peopleDetected") is True:
@@ -489,7 +489,7 @@ def build_observations(
 
     if fire_evidence.get("smokeVisible") is True:
         observations.append(
-            "È visibile del fumo"
+            "Ãˆ visibile del fumo"
         )
 
     if fire_evidence.get("detected") is True:
@@ -509,12 +509,12 @@ def build_observations(
 
     if fire_evidence.get("vehicleOnFire") is True:
         observations.append(
-            "È presente un veicolo in fiamme"
+            "Ãˆ presente un veicolo in fiamme"
         )
 
     if fire_evidence.get("explosionReported") is True:
         observations.append(
-            "È stata segnalata un'esplosione"
+            "Ãˆ stata segnalata un'esplosione"
         )
 
     vehicles_count = accident_evidence.get(
@@ -528,7 +528,7 @@ def build_observations(
 
     if accident_evidence.get("vehicleOverturned") is True:
         observations.append(
-            "È presente un veicolo ribaltato"
+            "Ãˆ presente un veicolo ribaltato"
         )
 
     if accident_evidence.get("roadBlocked") is True:
@@ -538,7 +538,7 @@ def build_observations(
 
     if accident_evidence.get("fuelLeak") is True:
         observations.append(
-            "È stata segnalata una perdita di carburante"
+            "Ãˆ stata segnalata una perdita di carburante"
         )
 
     if accident_evidence.get("debrisPresent") is True:
@@ -571,7 +571,7 @@ def format_service_line(name, service):
 
         return (
             f"- {name}: {service['units']} "
-            f"unità suggerite. Motivi: {reasons}"
+            f"unitÃ  suggerite. Motivi: {reasons}"
         )
 
     return (
@@ -690,16 +690,16 @@ def build_notification(
         f"Posizione: {location}\n"
         f"Tipo evento: {event_type}\n"
         f"Confidenza classificazione: {confidence}%\n"
-        f"Livello di gravità: {severity_level}\n"
-        f"Punteggio gravità: {severity_score}\n"
-        f"Priorità: {priority}\n\n"
+        f"Livello di gravitÃ : {severity_level}\n"
+        f"Punteggio gravitÃ : {severity_score}\n"
+        f"PrioritÃ : {priority}\n\n"
         "DESCRIZIONE\n"
         f"{description}\n\n"
         f"{observations_title}\n"
         f"{observation_lines}\n\n"
         "MEZZI DI SOCCORSO SUGGERITI\n"
         f"{service_lines}\n\n"
-        "Nota: il piano dei mezzi è una stima "
+        "Nota: il piano dei mezzi Ã¨ una stima "
         "automatica e deve essere verificato "
         "da un operatore."
     )

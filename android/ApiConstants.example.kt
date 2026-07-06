@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.network
+﻿package com.toracshalby.emergencymobile.network
 
 // Copiare questo file in:
 // app/src/main/java/com/toracshalby/emergencymobile/network/ApiConstants.kt

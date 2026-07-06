@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+﻿AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   CITY - Workflow and IoT resources.
   This stack creates the AWS IoT rule and the Step Functions state machine.
@@ -431,7 +431,7 @@ Resources:
                               "eventId.$": "$.eventId",
                               "status": "IMAGE_ARCHIVE_FAILED",
                               "progress": 100,
-                              "message": "L'emergenza è stata elaborata, ma l'archiviazione dell'immagine non è riuscita"
+                              "message": "L'emergenza Ã¨ stata elaborata, ma l'archiviazione dell'immagine non Ã¨ riuscita"
                             }
                           },
                           "ResultPath": null,
@@ -545,7 +545,7 @@ Resources:
                       "eventId.$": "$.eventId",
                       "status": "SEVERITY_EVALUATED",
                       "progress": 88,
-                      "message": "Valutazione della gravità completata"
+                      "message": "Valutazione della gravitÃ  completata"
                     }
                   },
                   "ResultPath": null,
@@ -641,7 +641,7 @@ Resources:
                       "eventId.$": "$.eventId",
                       "status": "PROCESSING_FAILED",
                       "progress": 100,
-                      "message": "Si è verificato un errore durante l'elaborazione dell'emergenza"
+                      "message": "Si Ã¨ verificato un errore durante l'elaborazione dell'emergenza"
                     }
                   },
                   "ResultPath": null,

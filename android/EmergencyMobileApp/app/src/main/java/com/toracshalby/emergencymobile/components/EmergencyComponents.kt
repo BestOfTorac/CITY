@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.components
+﻿package com.toracshalby.emergencymobile.components
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -139,7 +139,7 @@ fun EmergencyHeader() {
             Text(
                 text =
                     "Inserisci le informazioni disponibili. " +
-                            "La fotografia è facoltativa.",
+                            "La fotografia Ã¨ facoltativa.",
                 style =
                     MaterialTheme.typography
                         .bodyMedium,
@@ -284,8 +284,8 @@ fun TriStateSelector(
             Arrangement.spacedBy(10.dp)
     ) {
         ModernChoiceChip(
-            label = "Sì",
-            icon = "✓",
+            label = "SÃ¬",
+            icon = "âœ“",
             selected =
                 selectedValue == "YES",
             modifier =
@@ -298,7 +298,7 @@ fun TriStateSelector(
 
         ModernChoiceChip(
             label = "No",
-            icon = "×",
+            icon = "Ã—",
             selected =
                 selectedValue == "NO",
             modifier =

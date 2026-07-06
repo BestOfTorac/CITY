@@ -1,8 +1,8 @@
-# CITY — AWS Inventory
+﻿# CITY â€” AWS Inventory
 
 Documento di inventario delle risorse AWS attualmente usate da CITY e di come verranno rappresentate nel deployment finale CloudFormation.
 
-Contesto: progetto A1 — Microservice application for sustainable and inclusive Smart Cities. Architettura già approvata dalla prof.
+Contesto: progetto A1 â€” Microservice application for sustainable and inclusive Smart Cities. Architettura giÃ  approvata dalla prof.
 
 ---
 
@@ -14,19 +14,19 @@ File attuale:
 
 ```kotlin
 const val WEBSOCKET_URL =
-    "wss://k0jbltzn00.execute-api.us-east-1.amazonaws.com/production"
+    "INSERISCI_VECCHIO_WEBSOCKET_ENDPOINT"
 
 const val UPLOAD_URL_ENDPOINT =
-    "https://7i6shnmom5.execute-api.us-east-1.amazonaws.com/upload-url"
+    "INSERISCI_VECCHIO_UPLOAD_URL_ENDPOINT"
 
 const val EMERGENCY_ENDPOINT =
-    "https://7i6shnmom5.execute-api.us-east-1.amazonaws.com/emergency"
+    "INSERISCI_VECCHIO_EMERGENCY_ENDPOINT"
 
 const val CAMERA_TEST_ENDPOINT =
-    "https://7i6shnmom5.execute-api.us-east-1.amazonaws.com/test/camera"
+    "INSERISCI_VECCHIO_CAMERA_TEST_ENDPOINT"
 ```
 
-CloudFormation dovrà esporre questi output:
+CloudFormation dovrÃ  esporre questi output:
 
 | Android constant | CloudFormation output |
 |---|---|
@@ -50,7 +50,7 @@ CloudFormation dovrà esporre questi output:
 | `ValidateEvent` | Python 3.14 | Step Functions | Valida evento |
 | `ContextualizeEvent` | Python 3.14 | Step Functions | Costruisce contesto |
 | `ClassifyEvent` | Python 3.14 | Step Functions | Classifica emergenza |
-| `EvaluateSeverity` | Python 3.14 | Step Functions | Calcola gravità e priorità |
+| `EvaluateSeverity` | Python 3.14 | Step Functions | Calcola gravitÃ  e prioritÃ  |
 | `DecisionLogic` | Python 3.14 | Step Functions | Decide notifica, salvataggio e archivio |
 | `StoreLogs` | Python 3.14 | Step Functions | Archivia immagine su S3 |
 | `SendStatusUpdate` | Python 3.14 | Step Functions / ingestion Lambda | Invia aggiornamenti WebSocket |
@@ -101,7 +101,7 @@ Da verificare come legacy:
 
 ### `lambdaIngestion`
 
-Attualmente non ha env var in console, ma il codice usa default interni. Nel CloudFormation finale dovrà avere:
+Attualmente non ha env var in console, ma il codice usa default interni. Nel CloudFormation finale dovrÃ  avere:
 
 | Key | CloudFormation |
 |---|---|
@@ -125,7 +125,7 @@ Attualmente non ha env var in console, ma il codice usa default interni. Nel Clo
 |---|---|---|
 | `EVENT_ID_INDEX` | `eventId-index` | `eventId-index` |
 | `TABLE_NAME` | `WebSocketSubscriptions` | `!Ref WebSocketSubscriptionsTable` |
-| `WEBSOCKET_ENDPOINT` | `https://k0jbltzn00.execute-api.us-east-1.amazonaws.com/production` | `!Sub "https://${EmergencyStatusWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${WebSocketStageName}"` |
+| `WEBSOCKET_ENDPOINT` | `INSERISCI_VECCHIO_WEBSOCKET_MANAGEMENT_ENDPOINT` | `!Sub "https://${EmergencyStatusWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${WebSocketStageName}"` |
 
 ### `WebSocketHandler`
 
@@ -228,26 +228,26 @@ Main flow:
 
 ```text
 ValidateEvent
-→ SendValidatedStatus
-→ ContextualizeEvent
-→ SendContextualizedStatus
-→ ClassifyEvent
-→ SendClassifiedStatus
-→ EvaluateSeverity
-→ SendSeverityStatus
-→ DecisionLogic
-→ SendDecisionStatus
-→ FinalActions
-→ SendCompletedStatus
+â†’ SendValidatedStatus
+â†’ ContextualizeEvent
+â†’ SendContextualizedStatus
+â†’ ClassifyEvent
+â†’ SendClassifiedStatus
+â†’ EvaluateSeverity
+â†’ SendSeverityStatus
+â†’ DecisionLogic
+â†’ SendDecisionStatus
+â†’ FinalActions
+â†’ SendCompletedStatus
 ```
 
 Final parallel branches:
 
 | Branch | States |
 |---|---|
-| Notification | `CheckNotification → NotifyResponders → SendRespondersNotifiedStatus` |
+| Notification | `CheckNotification â†’ NotifyResponders â†’ SendRespondersNotifiedStatus` |
 | Database save | `SaveEmergencyData` |
-| Image archive | `CheckImageArchive → StoreLogs → CheckStoreLogs` |
+| Image archive | `CheckImageArchive â†’ StoreLogs â†’ CheckStoreLogs` |
 
 ---
 
@@ -256,10 +256,10 @@ Final parallel branches:
 | Property | Value |
 |---|---|
 | API name | `EmergencyResponseAPI` |
-| API ID | `7i6shnmom5` |
+| API ID | `VECCHIO_HTTP_API_ID` |
 | Type | HTTP API |
 | Stage | `$default` |
-| Base endpoint | `https://7i6shnmom5.execute-api.us-east-1.amazonaws.com` |
+| Base endpoint | `VECCHIO_HTTP_API_BASE_ENDPOINT` |
 
 | Route | Method | Lambda |
 |---|---|---|
@@ -274,10 +274,10 @@ Final parallel branches:
 | Property | Value |
 |---|---|
 | API name | `EmergencyStatusWebSocket` |
-| API ID | `k0jbltzn00` |
+| API ID | `VECCHIO_WEBSOCKET_API_ID` |
 | Type | WebSocket API |
 | Stage | `production` |
-| Endpoint | `wss://k0jbltzn00.execute-api.us-east-1.amazonaws.com/production` |
+| Endpoint | `INSERISCI_VECCHIO_WEBSOCKET_ENDPOINT` |
 | Route selection expression | `$request.body.action` |
 | Lambda | `WebSocketHandler` |
 
@@ -313,7 +313,7 @@ Final parallel branches:
 | ARN | `arn:aws:iam::620333538289:role/LabRole` |
 | Used by | Lambda and Step Functions |
 
-Per compatibilità con Learner Lab, CloudFormation riceverà `LabRoleArn` come parametro.
+Per compatibilitÃ  con Learner Lab, CloudFormation riceverÃ  `LabRoleArn` come parametro.
 
 ---
 
@@ -353,3 +353,4 @@ Per compatibilità con Learner Lab, CloudFormation riceverà `LabRoleArn` come p
 | `EmergencyEventsQueueUrl` | debug |
 | `EmergencyAlertsTopicArn` | debug |
 | `WorkflowEmergencyArn` | debug |
+

@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import re
 from datetime import datetime, timezone
@@ -436,8 +436,8 @@ def build_mobile_workflow_input(
                 "user_uploaded_image"
         },
 
-        # Conservato per compatibilità
-        # con classificazione e gravità.
+        # Conservato per compatibilitÃ 
+        # con classificazione e gravitÃ .
         "preliminaryDetection": {
             "type": detected_type,
             "confidence": confidence
@@ -597,7 +597,7 @@ def lambda_handler(event, context):
                 .get("Code")
             )
 
-            # SQS può consegnare nuovamente
+            # SQS puÃ² consegnare nuovamente
             # lo stesso messaggio.
             if (
                 error_code ==

@@ -1,14 +1,14 @@
-package com.toracshalby.emergencymobile.network
+﻿package com.toracshalby.emergencymobile.network
 
 
 const val WEBSOCKET_URL =
-    "wss://jwzc92xi14.execute-api.us-east-1.amazonaws.com/production"
+    "INSERISCI_OUTPUT_WEBSOCKET_ENDPOINT"
 
 const val UPLOAD_URL_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/upload-url"
+    "INSERISCI_OUTPUT_UPLOAD_URL_ENDPOINT"
 
 const val EMERGENCY_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/emergency"
+    "INSERISCI_OUTPUT_EMERGENCY_ENDPOINT"
 
 const val CAMERA_TEST_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/test/camera"
+    "INSERISCI_OUTPUT_CAMERA_TEST_ENDPOINT"

@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.navigation
+﻿package com.toracshalby.emergencymobile.navigation
 
 import android.content.Context
 import android.graphics.BitmapFactory

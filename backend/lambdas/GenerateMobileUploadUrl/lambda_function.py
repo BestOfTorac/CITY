@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import json
 import os
 import re
@@ -159,7 +159,7 @@ def lambda_handler(event, context):
                 400,
                 {
                     "status": "INVALID_FILE",
-                    "message": "fileName è obbligatorio"
+                    "message": "fileName Ã¨ obbligatorio"
                 }
             )
 

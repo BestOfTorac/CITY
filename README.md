@@ -1,8 +1,8 @@
-# CITY — Cloud-based Intelligent emergency response sYstem
+﻿# CITY â€” Cloud-based Intelligent emergency response sYstem
 
-CITY è un sistema distribuito serverless per la gestione intelligente di emergenze in contesto smart city.
+CITY Ã¨ un sistema distribuito serverless per la gestione intelligente di emergenze in contesto smart city.
 
-Il sistema permette di ricevere segnalazioni manuali da app Android e test da telecamera simulata, analizzare eventuali immagini con Amazon Rekognition, classificare l'emergenza, valutarne la gravità, notificare i soccorritori, salvare i dati e mostrare all'utente lo stato dell'elaborazione in tempo reale tramite WebSocket.
+Il sistema permette di ricevere segnalazioni manuali da app Android e test da telecamera simulata, analizzare eventuali immagini con Amazon Rekognition, classificare l'emergenza, valutarne la gravitÃ , notificare i soccorritori, salvare i dati e mostrare all'utente lo stato dell'elaborazione in tempo reale tramite WebSocket.
 
 ---
 
@@ -14,7 +14,7 @@ CITY nasce per simulare una piattaforma smart city capace di:
 - ricevere eventi da telecamere IoT simulate;
 - analizzare immagini associate all'evento;
 - classificare automaticamente il tipo di emergenza;
-- valutare gravità e priorità;
+- valutare gravitÃ  e prioritÃ ;
 - notificare i soccorritori tramite email;
 - salvare i risultati in uno stato persistente;
 - aggiornare l'app in tempo reale durante il workflow.
@@ -23,13 +23,13 @@ CITY nasce per simulare una piattaforma smart city capace di:
 
 ## 2. Tipologia progetto
 
-Il progetto è stato sviluppato per la traccia:
+Il progetto Ã¨ stato sviluppato per la traccia:
 
 ```text
-A1 — Microservice application for sustainable and inclusive Smart Cities
+A1 â€” Microservice application for sustainable and inclusive Smart Cities
 ```
 
-L'architettura è basata su microservizi serverless AWS e usa più pattern architetturali:
+L'architettura Ã¨ basata su microservizi serverless AWS e usa piÃ¹ pattern architetturali:
 
 - API Gateway pattern;
 - event-driven architecture;
@@ -46,41 +46,41 @@ L'architettura è basata su microservizi serverless AWS e usa più pattern archi
 
 ```text
 Android App
-├── Segnalazione manuale
-│   ├── POST /upload-url
-│   ├── upload immagine su S3 mobile/
-│   └── POST /emergency
-│       ├── receiveEmergency
-│       ├── MobileIngestion
-│       ├── Rekognition
-│       └── SQS
-│
-└── Test telecamera
-    └── POST /test/camera
-        ├── cameraSimulator
-        ├── AWS IoT Core topic emergency/camera
-        ├── CameraIngestionRule
-        ├── lambdaIngestion
-        ├── Rekognition
-        └── SQS
+â”œâ”€â”€ Segnalazione manuale
+â”‚   â”œâ”€â”€ POST /upload-url
+â”‚   â”œâ”€â”€ upload immagine su S3 mobile/
+â”‚   â””â”€â”€ POST /emergency
+â”‚       â”œâ”€â”€ receiveEmergency
+â”‚       â”œâ”€â”€ MobileIngestion
+â”‚       â”œâ”€â”€ Rekognition
+â”‚       â””â”€â”€ SQS
+â”‚
+â””â”€â”€ Test telecamera
+    â””â”€â”€ POST /test/camera
+        â”œâ”€â”€ cameraSimulator
+        â”œâ”€â”€ AWS IoT Core topic emergency/camera
+        â”œâ”€â”€ CameraIngestionRule
+        â”œâ”€â”€ lambdaIngestion
+        â”œâ”€â”€ Rekognition
+        â””â”€â”€ SQS
 
 SQS emergency-events-queue
-└── StartWorkflow
-    └── Step Functions workflowEmergency
-        ├── ValidateEvent
-        ├── ContextualizeEvent
-        ├── ClassifyEvent
-        ├── EvaluateSeverity
-        ├── DecisionLogic
-        └── FinalActions
-            ├── SNS emergency-alerts-topic
-            ├── DynamoDB EmergencyData
-            └── S3 events/
+â””â”€â”€ StartWorkflow
+    â””â”€â”€ Step Functions workflowEmergency
+        â”œâ”€â”€ ValidateEvent
+        â”œâ”€â”€ ContextualizeEvent
+        â”œâ”€â”€ ClassifyEvent
+        â”œâ”€â”€ EvaluateSeverity
+        â”œâ”€â”€ DecisionLogic
+        â””â”€â”€ FinalActions
+            â”œâ”€â”€ SNS emergency-alerts-topic
+            â”œâ”€â”€ DynamoDB EmergencyData
+            â””â”€â”€ S3 events/
 
 WebSocket
-├── WebSocketHandler
-├── DynamoDB WebSocketSubscriptions
-└── SendStatusUpdate
+â”œâ”€â”€ WebSocketHandler
+â”œâ”€â”€ DynamoDB WebSocketSubscriptions
+â””â”€â”€ SendStatusUpdate
 ```
 
 ---
@@ -116,7 +116,7 @@ WebSocket
 | `ValidateEvent` | Valida input evento |
 | `ContextualizeEvent` | Costruisce contesto |
 | `ClassifyEvent` | Classifica FIRE/ACCIDENT/UNKNOWN |
-| `EvaluateSeverity` | Calcola gravità e priorità |
+| `EvaluateSeverity` | Calcola gravitÃ  e prioritÃ  |
 | `DecisionLogic` | Decide notifica, salvataggio e archivio |
 | `StoreLogs` | Archivia immagini evento |
 | `SendStatusUpdate` | Invia update WebSocket all'app |
@@ -147,23 +147,23 @@ package com.toracshalby.emergencymobile.network
 
 
 const val WEBSOCKET_URL =
-    "wss://jwzc92xi14.execute-api.us-east-1.amazonaws.com/production"
+    "INSERISCI_OUTPUT_WEBSOCKET_ENDPOINT"
 
 const val UPLOAD_URL_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/upload-url"
+    "INSERISCI_OUTPUT_UPLOAD_URL_ENDPOINT"
 
 const val EMERGENCY_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/emergency"
+    "INSERISCI_OUTPUT_EMERGENCY_ENDPOINT"
 
 const val CAMERA_TEST_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/test/camera"
+    "INSERISCI_OUTPUT_CAMERA_TEST_ENDPOINT"
 ```
 
 ---
 
 ## 7. Deployment
 
-Il deployment è diviso in quattro stack CloudFormation:
+Il deployment Ã¨ diviso in quattro stack CloudFormation:
 
 ```text
 city-storage-messaging
@@ -185,7 +185,7 @@ Ordine di creazione:
 8. aggiornamento ApiConstants.kt Android
 ```
 
-La guida completa è in:
+La guida completa Ã¨ in:
 
 ```text
 docs/deployment-guide.md
@@ -223,50 +223,50 @@ events/
 
 ## 9. Test principali
 
-### Test 1 — Segnalazione manuale senza immagine
+### Test 1 â€” Segnalazione manuale senza immagine
 
 Atteso:
 
 ```text
 App Android
-→ POST /emergency
-→ Step Functions
-→ DynamoDB EmergencyData
-→ WebSocket 100%
+â†’ POST /emergency
+â†’ Step Functions
+â†’ DynamoDB EmergencyData
+â†’ WebSocket 100%
 ```
 
-### Test 2 — Segnalazione manuale con immagine
+### Test 2 â€” Segnalazione manuale con immagine
 
 Atteso:
 
 ```text
 App Android
-→ POST /upload-url
-→ S3 mobile/
-→ POST /emergency
-→ MobileIngestion
-→ Rekognition
-→ SQS
-→ Step Functions
-→ SNS / DynamoDB / S3
-→ WebSocket 100%
+â†’ POST /upload-url
+â†’ S3 mobile/
+â†’ POST /emergency
+â†’ MobileIngestion
+â†’ Rekognition
+â†’ SQS
+â†’ Step Functions
+â†’ SNS / DynamoDB / S3
+â†’ WebSocket 100%
 ```
 
-### Test 3 — Telecamera simulata
+### Test 3 â€” Telecamera simulata
 
 Atteso:
 
 ```text
 App Android
-→ POST /test/camera
-→ cameraSimulator
-→ IoT Core
-→ lambdaIngestion
-→ Rekognition
-→ SQS
-→ Step Functions
-→ SNS / DynamoDB / S3
-→ WebSocket 100%
+â†’ POST /test/camera
+â†’ cameraSimulator
+â†’ IoT Core
+â†’ lambdaIngestion
+â†’ Rekognition
+â†’ SQS
+â†’ Step Functions
+â†’ SNS / DynamoDB / S3
+â†’ WebSocket 100%
 ```
 
 ---
@@ -275,55 +275,55 @@ App Android
 
 ```text
 CITY/
-├── README.md
-├── android/
-│   └── EmergencyMobile/
-├── backend/
-│   ├── lambdas/
-│   └── stepfunctions/
-├── infrastructure/
-│   └── cloudformation/
-│       ├── storage-messaging.yaml
-│       ├── lambdas-update-websocket.yaml
-│       ├── api-gateway.yaml
-│       └── workflow-iot-fixed.yaml
-├── docs/
-│   ├── aws-inventory.md
-│   ├── deployment-guide.md
-│   ├── architecture.md
-│   └── test-plan.md
-├── dataset/
-│   └── README.md
-├── experiments/
-│   └── results/
-├── report/
-└── slides/
+â”œâ”€â”€ README.md
+â”œâ”€â”€ android/
+â”‚   â””â”€â”€ EmergencyMobile/
+â”œâ”€â”€ backend/
+â”‚   â”œâ”€â”€ lambdas/
+â”‚   â””â”€â”€ stepfunctions/
+â”œâ”€â”€ infrastructure/
+â”‚   â””â”€â”€ cloudformation/
+â”‚       â”œâ”€â”€ storage-messaging.yaml
+â”‚       â”œâ”€â”€ lambdas-update-websocket.yaml
+â”‚       â”œâ”€â”€ api-gateway.yaml
+â”‚       â””â”€â”€ workflow-iot-fixed.yaml
+â”œâ”€â”€ docs/
+â”‚   â”œâ”€â”€ aws-inventory.md
+â”‚   â”œâ”€â”€ deployment-guide.md
+â”‚   â”œâ”€â”€ architecture.md
+â”‚   â””â”€â”€ test-plan.md
+â”œâ”€â”€ dataset/
+â”‚   â””â”€â”€ README.md
+â”œâ”€â”€ experiments/
+â”‚   â””â”€â”€ results/
+â”œâ”€â”€ report/
+â””â”€â”€ slides/
 ```
 
 ---
 
 ## 11. Stato del progetto
 
-Funzionalità completate:
+FunzionalitÃ  completate:
 
 ```text
-Segnalazione manuale senza immagine ✅
-Segnalazione manuale con immagine ✅
-Telecamera simulata ✅
-WebSocket real-time ✅
-SNS email ✅
-DynamoDB persistence ✅
-S3 archive ✅
-CloudFormation deployment su nuovo account ✅
+Segnalazione manuale senza immagine âœ…
+Segnalazione manuale con immagine âœ…
+Telecamera simulata âœ…
+WebSocket real-time âœ…
+SNS email âœ…
+DynamoDB persistence âœ…
+S3 archive âœ…
+CloudFormation deployment su nuovo account âœ…
 ```
 
 ---
 
 ## 12. Possibili sviluppi futuri
 
-- Supporto a più categorie di emergenza.
+- Supporto a piÃ¹ categorie di emergenza.
 - Dashboard web per operatori.
 - Autenticazione utenti.
-- Dataset più ampio e valutazione quantitativa della classificazione.
-- Integrazione con mappe reali e unità di soccorso.
+- Dataset piÃ¹ ampio e valutazione quantitativa della classificazione.
+- Integrazione con mappe reali e unitÃ  di soccorso.
 - Ottimizzazione costi e cold start.

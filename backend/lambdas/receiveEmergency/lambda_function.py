@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import json
 import os
 import re
@@ -57,7 +57,7 @@ def parse_request_body(event):
 
     if body is None:
         raise ValueError(
-            "Il body della richiesta è assente"
+            "Il body della richiesta Ã¨ assente"
         )
 
     if (
@@ -91,7 +91,7 @@ def validate_report(request_body):
 
     if not location or not str(location).strip():
         raise ValueError(
-            "Il campo location è obbligatorio"
+            "Il campo location Ã¨ obbligatorio"
         )
 
     if (
@@ -99,7 +99,7 @@ def validate_report(request_body):
         or not str(description).strip()
     ):
         raise ValueError(
-            "Il campo description è obbligatorio"
+            "Il campo description Ã¨ obbligatorio"
         )
 
     image_data = request_body.get("imageData")
@@ -117,12 +117,12 @@ def validate_report(request_body):
 
     if not bucket:
         raise ValueError(
-            "imageData.bucket è obbligatorio"
+            "imageData.bucket Ã¨ obbligatorio"
         )
 
     if not image_key:
         raise ValueError(
-            "imageData.imageKey è obbligatorio"
+            "imageData.imageKey Ã¨ obbligatorio"
         )
 
     # Impedisce di indicare file esterni
@@ -352,7 +352,7 @@ def lambda_handler(event, context):
                 "status":
                     "DUPLICATE_EVENT",
                 "message":
-                    "Esiste già un'esecuzione "
+                    "Esiste giÃ  un'esecuzione "
                     "per questo eventId"
             }
         )

@@ -1,4 +1,4 @@
-package com.toracshalby.emergencymobile.components
+﻿package com.toracshalby.emergencymobile.components
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -190,7 +190,7 @@ fun ImagePreview(uri: Uri) {
                                 contentAlignment =
                                     Alignment.Center
                             ) {
-                                Text("✓")
+                                Text("âœ“")
                             }
                         }
 
@@ -204,7 +204,7 @@ fun ImagePreview(uri: Uri) {
 
                             Text(
                                 text =
-                                    "Verrà caricata insieme alla segnalazione",
+                                    "VerrÃ  caricata insieme alla segnalazione",
                                 style =
                                     MaterialTheme.typography
                                         .bodySmall,

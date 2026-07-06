@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: "2010-09-09"
+﻿AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   CITY - Lambda functions.
   This stack creates the Lambda functions used by the CITY emergency response system.

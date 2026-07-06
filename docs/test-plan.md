@@ -1,4 +1,4 @@
-# CITY — Test Plan
+﻿# CITY â€” Test Plan
 
 ## Functional tests
 

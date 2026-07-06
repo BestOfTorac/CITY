@@ -1,4 +1,4 @@
-import json
+﻿import json
 from datetime import datetime, timezone
 from numbers import Number
 
@@ -571,7 +571,7 @@ def validate_mobile_image(
         "visualAnalysis"
     )
 
-    # La fotografia è facoltativa.
+    # La fotografia Ã¨ facoltativa.
     if image_data is None:
         if visual_analysis is not None:
             errors.append(

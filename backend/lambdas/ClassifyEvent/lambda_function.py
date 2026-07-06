@@ -1,4 +1,4 @@
-import json
+﻿import json
 from datetime import datetime, timezone
 
 
@@ -61,7 +61,7 @@ def build_human_scores(context):
         {}
     )
 
-    # Il tipo dichiarato dall'utente è un indizio,
+    # Il tipo dichiarato dall'utente Ã¨ un indizio,
     # ma non determina da solo la classificazione.
     if reported_type == "FIRE":
         fire_score += 20
@@ -242,7 +242,7 @@ def build_human_scores(context):
 
     # Evidenze provenienti dalla foto allegata dall'utente.
     # Una rilevazione visiva diretta e sufficientemente
-    # confidente può determinare la classificazione.
+    # confidente puÃ² determinare la classificazione.
     strongest_image_fire = fire_evidence.get(
         "strongestImageEvidence"
     )
@@ -442,7 +442,7 @@ def build_human_scores(context):
                 "origin": "USER_UPLOADED_IMAGE"
             })
 
-    # Feriti e pericolo immediato saranno più importanti
+    # Feriti e pericolo immediato saranno piÃ¹ importanti
     # per EvaluateSeverity che per la classificazione.
     human_risk_summary = {
         "injured": human_risk.get("injured"),
@@ -589,7 +589,7 @@ def build_camera_scores(context):
         "confidence"
     )
 
-    # La rilevazione preliminare rafforza una prova già
+    # La rilevazione preliminare rafforza una prova giÃ 
     # presente, ma non la sostituisce.
     if (
         preliminary_type == "fire"

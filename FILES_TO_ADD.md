@@ -1,4 +1,4 @@
-# Files to add next
+﻿# Files to add next
 
 1. Copy the full Android Studio project into `android/EmergencyMobile/`.
 2. Keep `android/ApiConstants.example.kt` public-safe.

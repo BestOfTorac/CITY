@@ -1,8 +1,8 @@
-# CITY — Architecture
+﻿# CITY â€” Architecture
 
 ## Overview
 
-CITY è una piattaforma serverless a microservizi per la gestione intelligente delle emergenze in una smart city.
+CITY Ã¨ una piattaforma serverless a microservizi per la gestione intelligente delle emergenze in una smart city.
 
 ## Main flows
 
@@ -10,40 +10,40 @@ CITY è una piattaforma serverless a microservizi per la gestione intelligente d
 
 ```text
 Android app
-→ API Gateway HTTP
-→ receiveEmergency
-→ MobileIngestion, se è presente una foto
-→ Rekognition
-→ SQS
-→ StartWorkflow
-→ Step Functions
+â†’ API Gateway HTTP
+â†’ receiveEmergency
+â†’ MobileIngestion, se Ã¨ presente una foto
+â†’ Rekognition
+â†’ SQS
+â†’ StartWorkflow
+â†’ Step Functions
 ```
 
 ### Camera test flow
 
 ```text
 Android app
-→ API Gateway HTTP /test/camera
-→ cameraSimulator
-→ AWS IoT Core topic emergency/camera
-→ CameraIngestionRule
-→ lambdaIngestion
-→ Rekognition
-→ SQS
-→ StartWorkflow
-→ Step Functions
+â†’ API Gateway HTTP /test/camera
+â†’ cameraSimulator
+â†’ AWS IoT Core topic emergency/camera
+â†’ CameraIngestionRule
+â†’ lambdaIngestion
+â†’ Rekognition
+â†’ SQS
+â†’ StartWorkflow
+â†’ Step Functions
 ```
 
 ### Real-time status flow
 
 ```text
 Android app
-→ WebSocket subscribe(eventId)
-→ WebSocketHandler
-→ DynamoDB WebSocketSubscriptions
-→ SendStatusUpdate
-→ API Gateway Management API
-→ Android app
+â†’ WebSocket subscribe(eventId)
+â†’ WebSocketHandler
+â†’ DynamoDB WebSocketSubscriptions
+â†’ SendStatusUpdate
+â†’ API Gateway Management API
+â†’ Android app
 ```
 
 ## Microservice patterns

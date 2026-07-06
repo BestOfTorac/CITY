@@ -1,4 +1,4 @@
-# CITY — Deployment Guide
+﻿# CITY â€” Deployment Guide
 
 Guida operativa per distribuire CITY su un nuovo account AWS Learner Lab usando CloudFormation.
 
@@ -7,10 +7,10 @@ Guida operativa per distribuire CITY su un nuovo account AWS Learner Lab usando 
 Nel test su nuovo account risultano funzionanti:
 
 ```text
-city-storage-messaging ✅
-city-lambdas ✅
-city-api ✅
-city-workflow-iot ✅
+city-storage-messaging âœ…
+city-lambdas âœ…
+city-api âœ…
+city-workflow-iot âœ…
 ```
 
 ## 1. Prerequisiti
@@ -24,7 +24,7 @@ city-workflow-iot ✅
   - `workflow-iot-fixed.yaml`
 - ZIP Lambda caricati in S3 sotto `deployment/lambdas/`.
 
-## 2. Stack 1 — Storage e messaging
+## 2. Stack 1 â€” Storage e messaging
 
 Template:
 
@@ -48,7 +48,7 @@ SQS emergency-events-queue
 SNS emergency-alerts-topic
 ```
 
-Nel test il bucket creato è:
+Nel test il bucket creato Ã¨:
 
 ```text
 city-dev-emergency-images-285809320909-us-east-1
@@ -97,7 +97,7 @@ avk5ip4giaq6u-ats.iot.us-east-1.amazonaws.com
 
 Usare solo il dominio, senza `https://`.
 
-## 5. Stack 2 — Lambda
+## 5. Stack 2 â€” Lambda
 
 Template:
 
@@ -122,9 +122,9 @@ LabRoleName = LabRole
 WorkflowStateMachineName = workflowEmergency
 ```
 
-Al primo deploy, `WebSocketManagementEndpoint` può restare temporaneamente placeholder.
+Al primo deploy, `WebSocketManagementEndpoint` puÃ² restare temporaneamente placeholder.
 
-## 6. Stack 3 — API Gateway
+## 6. Stack 3 â€” API Gateway
 
 Template:
 
@@ -141,11 +141,11 @@ city-api
 Output generati nel test:
 
 ```text
-EmergencyEndpoint = https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/emergency
-UploadUrlEndpoint = https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/upload-url
-CameraTestEndpoint = https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/test/camera
-WebSocketEndpoint = wss://jwzc92xi14.execute-api.us-east-1.amazonaws.com/production
-WebSocketManagementEndpoint = https://jwzc92xi14.execute-api.us-east-1.amazonaws.com/production
+EmergencyEndpoint = INSERISCI_OUTPUT_EMERGENCY_ENDPOINT
+UploadUrlEndpoint = INSERISCI_OUTPUT_UPLOAD_URL_ENDPOINT
+CameraTestEndpoint = INSERISCI_OUTPUT_CAMERA_TEST_ENDPOINT
+WebSocketEndpoint = INSERISCI_OUTPUT_WEBSOCKET_ENDPOINT
+WebSocketManagementEndpoint = INSERISCI_OUTPUT_WEBSOCKET_MANAGEMENT_ENDPOINT
 ```
 
 ## 7. Update Lambda con WebSocket reale
@@ -159,7 +159,7 @@ lambdas-update-websocket.yaml
 Parametro da aggiornare:
 
 ```text
-WebSocketManagementEndpoint = https://jwzc92xi14.execute-api.us-east-1.amazonaws.com/production
+WebSocketManagementEndpoint = INSERISCI_OUTPUT_WEBSOCKET_MANAGEMENT_ENDPOINT
 ```
 
 Risultato atteso:
@@ -168,7 +168,7 @@ Risultato atteso:
 UPDATE_COMPLETE
 ```
 
-## 8. Stack 4 — Workflow e IoT
+## 8. Stack 4 â€” Workflow e IoT
 
 Template:
 
@@ -215,16 +215,16 @@ package com.toracshalby.emergencymobile.network
 
 
 const val WEBSOCKET_URL =
-    "wss://jwzc92xi14.execute-api.us-east-1.amazonaws.com/production"
+    "INSERISCI_OUTPUT_WEBSOCKET_ENDPOINT"
 
 const val UPLOAD_URL_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/upload-url"
+    "INSERISCI_OUTPUT_UPLOAD_URL_ENDPOINT"
 
 const val EMERGENCY_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/emergency"
+    "INSERISCI_OUTPUT_EMERGENCY_ENDPOINT"
 
 const val CAMERA_TEST_ENDPOINT =
-    "https://5q4ao06b12.execute-api.us-east-1.amazonaws.com/test/camera"
+    "INSERISCI_OUTPUT_CAMERA_TEST_ENDPOINT"
 ```
 
 ## 10. Dataset S3
@@ -261,7 +261,7 @@ Dopo la creazione dello stack storage/messaging, confermare la mail SNS cliccand
 Confirm subscription
 ```
 
-Finché la subscription non è confermata, SNS non invia email.
+FinchÃ© la subscription non Ã¨ confermata, SNS non invia email.
 
 ## 12. Test end-to-end
 
@@ -270,10 +270,10 @@ Finché la subscription non è confermata, SNS non invia email.
 Atteso:
 
 ```text
-Android app → /emergency
-→ Step Functions
-→ DynamoDB EmergencyData
-→ WebSocket 100%
+Android app â†’ /emergency
+â†’ Step Functions
+â†’ DynamoDB EmergencyData
+â†’ WebSocket 100%
 ```
 
 ### Segnalazione manuale con immagine
@@ -281,17 +281,17 @@ Android app → /emergency
 Atteso:
 
 ```text
-Android app → /upload-url
-→ upload S3 mobile/
-→ /emergency
-→ MobileIngestion
-→ Rekognition
-→ SQS
-→ Step Functions
-→ S3 events/
-→ DynamoDB
-→ eventuale SNS
-→ WebSocket 100%
+Android app â†’ /upload-url
+â†’ upload S3 mobile/
+â†’ /emergency
+â†’ MobileIngestion
+â†’ Rekognition
+â†’ SQS
+â†’ Step Functions
+â†’ S3 events/
+â†’ DynamoDB
+â†’ eventuale SNS
+â†’ WebSocket 100%
 ```
 
 ### Telecamera simulata
@@ -299,23 +299,23 @@ Android app → /upload-url
 Atteso:
 
 ```text
-Android app → /test/camera
-→ cameraSimulator
-→ IoT topic emergency/camera
-→ CameraIngestionRule
-→ lambdaIngestion
-→ Rekognition
-→ SQS
-→ Step Functions
-→ S3 captured/ + events/
-→ DynamoDB
-→ eventuale SNS
-→ WebSocket 100%
+Android app â†’ /test/camera
+â†’ cameraSimulator
+â†’ IoT topic emergency/camera
+â†’ CameraIngestionRule
+â†’ lambdaIngestion
+â†’ Rekognition
+â†’ SQS
+â†’ Step Functions
+â†’ S3 captured/ + events/
+â†’ DynamoDB
+â†’ eventuale SNS
+â†’ WebSocket 100%
 ```
 
 ## 13. Conclusione
 
-Il deployment CloudFormation è stato verificato su un nuovo account AWS. Il sistema è riproducibile tramite stack modulari e richiede solo:
+Il deployment CloudFormation Ã¨ stato verificato su un nuovo account AWS. Il sistema Ã¨ riproducibile tramite stack modulari e richiede solo:
 - caricamento degli zip Lambda su S3;
 - caricamento del dataset immagini in `dataset/`;
 - aggiornamento degli endpoint Android dagli output CloudFormation;
