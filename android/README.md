@@ -1,101 +1,163 @@
-# CITY - Android App
+# CITY - Android Section
 
-Questo documento descrive la struttura dell'app Android usata nel progetto CITY.
+Questa cartella contiene il client Android del progetto CITY.
 
-L'app Android rappresenta il client mobile del sistema. Permette all'utente di:
+Se stai aprendo il progetto per la prima volta, questa sezione ti serve per capire:
 
 ```text
-1. inviare una segnalazione manuale di emergenza;
-2. allegare una foto alla segnalazione;
-3. avviare un test di telecamera simulata;
-4. ricevere aggiornamenti real-time sullo stato dell'elaborazione tramite WebSocket.
+1. dove si trova l'app Android;
+2. come aprirla in Android Studio;
+3. quali file sono importanti;
+4. come configurare gli endpoint AWS dopo il deploy;
+5. quali funzionalita' dell'app testare;
+6. quali file non devono essere caricati nella repository pubblica.
 ```
 
-La descrizione completa dell'architettura backend si trova in:
+Per capire l'architettura completa del sistema consulta:
 
 ```text
-docs/architecture.md
+../docs/architecture.md
 ```
 
-La procedura di deploy AWS si trova in:
+Per tirare su il backend AWS consulta:
 
 ```text
-docs/deployment-guide.md
+../docs/deployment-guide.md
+```
+
+Per testare il sistema end-to-end consulta:
+
+```text
+../docs/test-plan.md
 ```
 
 ---
 
-## 1. Posizione del progetto Android
+## 1. Cosa contiene questa cartella
 
-Il progetto Android si trova nella cartella:
-
-```text
-android/EmergencyMobileApp/
-```
-
-La cartella `android/` contiene questo README e il progetto mobile vero e proprio.
-
-Struttura generale:
+Struttura prevista:
 
 ```text
 android/
 |-- README.md
 |-- EmergencyMobileApp/
     |-- app/
+    |-- gradle/
     |-- build.gradle.kts
     |-- settings.gradle.kts
-    |-- gradle/
     |-- gradlew
     |-- gradlew.bat
 ```
 
-Il modulo principale dell'app e':
+Il progetto Android da aprire in Android Studio e':
 
 ```text
-android/EmergencyMobileApp/app/
+android/EmergencyMobileApp/
+```
+
+Non aprire direttamente la cartella root della repository se vuoi lavorare solo sull'app. Apri la cartella `EmergencyMobileApp`.
+
+---
+
+## 2. Ruolo dell'app Android
+
+L'app Android e' il punto di ingresso usato dall'utente.
+
+Permette di:
+
+```text
+inviare una segnalazione manuale di emergenza
+allegare una foto alla segnalazione
+avviare un test di telecamera simulata
+ricevere aggiornamenti real-time sullo stato dell'emergenza
+```
+
+L'app non contiene la logica cloud principale. La logica di elaborazione e' nel backend AWS.
+
+L'app comunica con il backend tramite:
+
+```text
+API Gateway HTTP
+API Gateway WebSocket
+S3 presigned URL
 ```
 
 ---
 
-## 2. Ruolo dell'app nel sistema CITY
+## 3. Flussi supportati dall'app
 
-L'app non contiene la logica cloud principale. La sua responsabilita' e' interagire con il backend AWS tramite gli endpoint esposti da API Gateway.
-
-L'app comunica con:
+### 3.1 Segnalazione manuale senza immagine
 
 ```text
-HTTP API Gateway
-WebSocket API Gateway
-Amazon S3 tramite presigned URL
+App Android
+-> POST /emergency
+-> backend AWS
+-> workflow Step Functions
+-> aggiornamenti WebSocket
+-> completamento sull'app
 ```
 
-I flussi principali sono:
+Questo flusso serve per inviare una emergenza testuale o manuale senza foto.
+
+### 3.2 Segnalazione manuale con immagine
 
 ```text
-Manual report without image
-Manual report with image
-Camera simulation test
-Real-time status updates
+App Android
+-> POST /upload-url
+-> riceve presigned URL
+-> upload diretto foto su S3
+-> POST /emergency
+-> backend AWS
+-> Rekognition
+-> workflow Step Functions
+-> aggiornamenti WebSocket
 ```
+
+La foto non viene inviata direttamente a una Lambda. Viene caricata su S3 tramite presigned URL.
+
+### 3.3 Test telecamera simulata
+
+```text
+App Android
+-> POST /test/camera
+-> backend AWS
+-> immagine casuale da S3 dataset/
+-> AWS IoT Core
+-> workflow Step Functions
+-> aggiornamenti WebSocket
+```
+
+Questo flusso serve a testare il ramo camera senza usare una telecamera reale.
 
 ---
 
-## 3. Endpoint usati dall'app
+## 4. Come aprire il progetto
 
-L'app usa quattro endpoint generati dallo stack CloudFormation `city-api`.
-
-| Costante Android | Output CloudFormation | Uso |
-|---|---|---|
-| `WEBSOCKET_URL` | `WebSocketEndpoint` | Connessione WebSocket per aggiornamenti real-time |
-| `UPLOAD_URL_ENDPOINT` | `UploadUrlEndpoint` | Richiesta presigned URL per upload immagine |
-| `EMERGENCY_ENDPOINT` | `EmergencyEndpoint` | Invio segnalazione manuale |
-| `CAMERA_TEST_ENDPOINT` | `CameraTestEndpoint` | Avvio test telecamera simulata |
-
-Il file da configurare localmente e':
+1. Aprire Android Studio.
+2. Selezionare `Open`.
+3. Aprire la cartella:
 
 ```text
-app/src/main/java/com/toracshalby/emergencymobile/network/ApiConstants.kt
+android/EmergencyMobileApp/
 ```
+
+4. Attendere il Gradle Sync.
+5. Collegare un dispositivo Android oppure avviare un emulatore.
+6. Premere `Run`.
+
+---
+
+## 5. File piu' importante: ApiConstants.kt
+
+Dopo aver completato il deploy AWS, bisogna configurare gli endpoint nell'app.
+
+File da modificare localmente:
+
+```text
+EmergencyMobileApp/app/src/main/java/com/toracshalby/emergencymobile/network/ApiConstants.kt
+```
+
+Il file deve contenere gli output generati dallo stack CloudFormation `city-api`.
 
 Esempio:
 
@@ -115,244 +177,134 @@ const val CAMERA_TEST_ENDPOINT =
     "OUTPUT_CAMERA_TEST_ENDPOINT"
 ```
 
-Sostituire i placeholder con gli output reali dello stack `city-api`.
+Sostituzioni da fare:
+
+| Costante Android | Output CloudFormation |
+|---|---|
+| `WEBSOCKET_URL` | `WebSocketEndpoint` |
+| `UPLOAD_URL_ENDPOINT` | `UploadUrlEndpoint` |
+| `EMERGENCY_ENDPOINT` | `EmergencyEndpoint` |
+| `CAMERA_TEST_ENDPOINT` | `CameraTestEndpoint` |
 
 ---
 
-## 4. Configurazione sicura degli endpoint
+## 6. Attenzione agli endpoint reali
 
-Gli endpoint reali usati per una demo privata non devono essere pubblicati se non necessario.
+Gli endpoint reali generati da AWS possono essere usati localmente per test e demo, ma non devono essere pubblicati se si vuole mantenere la repository pulita.
 
-Prima del push pubblico verificare che non siano presenti:
+Prima del push controllare sempre che non siano presenti endpoint reali non voluti.
 
-```text
-endpoint reali temporanei
-access key
-secret key
-token AWS
-file local.properties
-keystore
-credenziali
+Comandi utili:
+
+```powershell
+git grep -n "execute-api"
+git grep -n "amazonaws.com"
+git grep -n "wss://"
 ```
 
-File e cartelle da non versionare:
+Se i risultati mostrano solo placeholder, va bene.
 
-```text
-local.properties
-.gradle/
-build/
-app/build/
-*.jks
-*.keystore
-```
-
-Se nella repository e' presente:
-
-```text
-ApiConstants.example.kt
-```
-
-questo file deve contenere solo placeholder, non endpoint reali.
+Se mostrano endpoint reali di demo privata, sostituirli prima del push.
 
 ---
 
-## 5. Struttura logica dell'app
+## 7. Organizzazione logica del codice
 
-La struttura puo' variare leggermente in base all'organizzazione del codice, ma la divisione logica dell'app e' la seguente.
+La struttura esatta puo' variare, ma l'app e' organizzata logicamente in questi blocchi.
 
 ```text
-com.toracshalby.emergencymobile/
-|-- network/
-|-- model/
-|-- ui/
-|-- websocket/
-|-- utils/
+network/
+model/
+ui/
+websocket/
+utils/
 ```
 
-### 5.1 network/
+### 7.1 network/
 
-Contiene le classi responsabili della comunicazione HTTP con il backend AWS.
+Contiene la comunicazione HTTP con il backend.
 
 Responsabilita':
 
 ```text
-chiamare POST /upload-url
-chiamare POST /emergency
-chiamare POST /test/camera
-gestire request e response HTTP
-centralizzare gli endpoint in ApiConstants.kt
+chiamare /upload-url
+chiamare /emergency
+chiamare /test/camera
+gestire richieste e risposte
+tenere centralizzati gli endpoint
 ```
 
-File principale:
+### 7.2 model/
+
+Contiene le classi dati usate dall'app.
+
+Esempi:
 
 ```text
-ApiConstants.kt
+segnalazione di emergenza
+risposta upload URL
+risposta test camera
+aggiornamento di stato
 ```
 
-Questa divisione evita di spargere URL e logica di rete nelle schermate dell'app.
+### 7.3 ui/
 
-### 5.2 model/
-
-Contiene i modelli dati usati dall'app.
-
-Esempi di dati rappresentati:
-
-```text
-emergency report
-location
-image upload request
-image upload response
-camera test response
-status update
-```
-
-I model servono a separare i dati dalla UI e dalla logica di rete.
-
-### 5.3 ui/
-
-Contiene le schermate e i componenti visuali dell'app.
+Contiene schermate e componenti visuali.
 
 Responsabilita':
 
 ```text
-mostrare form di segnalazione
-permettere selezione o scatto immagine
-mostrare avanzamento del workflow
-mostrare risultato finale
-mostrare eventuali errori
+form di segnalazione
+selezione immagine
+pulsante test camera
+barra o schermata di avanzamento
+messaggi di errore o completamento
 ```
 
-La UI non dovrebbe contenere direttamente dettagli AWS. Deve usare le funzioni offerte dal livello network o da eventuali ViewModel/controller.
+### 7.4 websocket/
 
-### 5.4 websocket/
-
-Contiene la logica per la connessione WebSocket.
+Contiene la gestione della connessione WebSocket.
 
 Responsabilita':
 
 ```text
-aprire la connessione verso WEBSOCKET_URL
+aprire la connessione
 inviare subscribe(eventId)
 ricevere aggiornamenti di stato
-aggiornare la UI durante il workflow
-gestire disconnessione o errori di rete
+gestire errori o disconnessioni
 ```
 
-Il WebSocket e' fondamentale per mostrare il progresso dell'elaborazione in tempo reale.
-
-### 5.5 utils/
+### 7.5 utils/
 
 Contiene funzioni di supporto.
 
 Esempi:
 
 ```text
-gestione URI immagini
-conversione file/bitmap
+gestione file immagine
+conversioni URI/File
 validazione input
-formattazione date
 logging locale
 ```
 
 ---
 
-## 6. Flusso manuale senza immagine
+## 8. Aggiornamenti real-time
 
-Questo flusso viene usato quando l'utente invia una segnalazione senza allegare foto.
+Quando viene avviata una segnalazione, l'app si sottoscrive all'evento tramite WebSocket usando un `eventId`.
+
+Flusso:
 
 ```text
-Android App
--> apre WebSocket
+App Android
+-> connessione WebSocket
 -> subscribe(eventId)
--> POST /emergency
--> receiveEmergency
--> workflowEmergency
--> aggiornamenti WebSocket
--> completamento sull'app
+-> backend salva connectionId + eventId
+-> Step Functions invia aggiornamenti
+-> app mostra lo stato
 ```
 
-Passaggi lato app:
-
-```text
-1. L'utente compila la segnalazione.
-2. L'app crea o riceve un eventId.
-3. L'app apre la connessione WebSocket.
-4. L'app invia subscribe(eventId).
-5. L'app invia la segnalazione a EMERGENCY_ENDPOINT.
-6. L'app riceve gli aggiornamenti real-time.
-7. L'app mostra il completamento.
-```
-
----
-
-## 7. Flusso manuale con immagine
-
-Questo flusso viene usato quando l'utente allega una foto.
-
-La foto non viene inviata direttamente a una Lambda. L'app carica l'immagine su S3 usando una presigned URL.
-
-```text
-Android App
--> POST /upload-url
--> riceve presigned URL
--> upload diretto foto su S3 mobile/
--> POST /emergency con riferimento immagine
--> MobileIngestion
--> Rekognition
--> SQS
--> workflowEmergency
--> aggiornamenti WebSocket
-```
-
-Passaggi lato app:
-
-```text
-1. L'utente seleziona o scatta una foto.
-2. L'app chiama UPLOAD_URL_ENDPOINT.
-3. Il backend restituisce una presigned URL.
-4. L'app carica la foto direttamente su S3.
-5. L'app invia la segnalazione a EMERGENCY_ENDPOINT includendo imageKey o riferimento immagine.
-6. L'app resta in ascolto sul WebSocket.
-7. L'app mostra gli stati ricevuti dal backend.
-```
-
----
-
-## 8. Flusso test telecamera simulata
-
-Questo flusso serve a testare il ramo camera senza usare una telecamera reale.
-
-```text
-Android App
--> POST /test/camera
--> cameraSimulator
--> S3 dataset/
--> AWS IoT Core
--> lambdaIngestion
--> Rekognition
--> SQS
--> workflowEmergency
--> aggiornamenti WebSocket
-```
-
-Passaggi lato app:
-
-```text
-1. L'utente preme il pulsante per avviare il test camera.
-2. L'app chiama CAMERA_TEST_ENDPOINT.
-3. Il backend seleziona una immagine casuale dal dataset S3.
-4. Il backend pubblica l'evento su AWS IoT Core.
-5. Il workflow viene avviato lato backend.
-6. L'app riceve gli aggiornamenti tramite WebSocket.
-```
-
----
-
-## 9. Aggiornamenti real-time
-
-Durante l'elaborazione, l'app riceve stati dal backend.
-
-Esempi di stati:
+Esempi di stati ricevibili:
 
 ```text
 IMAGE_ANALYZED
@@ -368,72 +320,33 @@ PROCESSING_FAILED
 IMAGE_ARCHIVE_FAILED
 ```
 
-Non tutti gli stati sono presenti in ogni flusso.
-
-Per esempio:
-
-```text
-IMAGE_ANALYZED
-```
-
-e' previsto solo quando viene elaborata una immagine.
+Non tutti gli stati compaiono in ogni flusso. Per esempio `IMAGE_ANALYZED` compare solo quando viene elaborata una immagine.
 
 ---
 
-## 10. Come eseguire l'app
+## 9. Cosa testare dall'app
 
-### 10.1 Aprire il progetto
-
-Aprire Android Studio e selezionare:
+Dopo aver configurato gli endpoint, eseguire questi test minimi:
 
 ```text
-android/EmergencyMobileApp/
+1. invio segnalazione manuale senza immagine;
+2. invio segnalazione manuale con immagine;
+3. avvio test telecamera simulata;
+4. verifica aggiornamenti WebSocket fino a COMPLETED;
+5. verifica che DynamoDB e S3 vengano aggiornati lato AWS.
 ```
 
-### 10.2 Sincronizzare Gradle
-
-Eseguire:
+Il piano completo dei test e' in:
 
 ```text
-Sync Project with Gradle Files
-```
-
-### 10.3 Configurare ApiConstants.kt
-
-Inserire gli endpoint reali ottenuti da CloudFormation.
-
-### 10.4 Avviare l'app
-
-Collegare un dispositivo Android oppure usare un emulatore, poi premere:
-
-```text
-Run
+../docs/test-plan.md
 ```
 
 ---
 
-## 11. Test principali dall'app
+## 10. Problemi comuni
 
-Dopo aver avviato l'app, eseguire questi test:
-
-```text
-1. Segnalazione manuale senza immagine
-2. Segnalazione manuale con immagine
-3. Test telecamera simulata
-4. Verifica aggiornamenti WebSocket
-```
-
-Per il piano di test completo consultare:
-
-```text
-docs/test-plan.md
-```
-
----
-
-## 12. Problemi comuni
-
-### 12.1 L'app non si collega al backend
+### 10.1 L'app non comunica con il backend
 
 Controllare:
 
@@ -441,21 +354,21 @@ Controllare:
 ApiConstants.kt
 connessione internet
 endpoint copiati correttamente
-stack city-api in CREATE_COMPLETE
+stack city-api completato
 ```
 
-### 12.2 L'upload immagine fallisce
+### 10.2 Upload immagine fallisce
 
 Controllare:
 
 ```text
 UPLOAD_URL_ENDPOINT corretto
-permessi Android per accedere all'immagine
+permessi Android per selezionare immagini
 presigned URL non scaduta
 bucket S3 creato correttamente
 ```
 
-### 12.3 Il test camera non funziona
+### 10.3 Test camera non funziona
 
 Controllare:
 
@@ -463,78 +376,79 @@ Controllare:
 CAMERA_TEST_ENDPOINT corretto
 dataset/ presente su S3
 dataset/ contiene immagini
-city-workflow-iot creato correttamente
+stack city-workflow-iot completato
 ```
 
-### 12.4 Non arrivano aggiornamenti real-time
+### 10.4 Non arrivano aggiornamenti WebSocket
 
 Controllare:
 
 ```text
 WEBSOCKET_URL corretto
-subscribe(eventId) inviato correttamente
-WebSocketSubscriptions contiene la connessione
-SendStatusUpdate usa WebSocketManagementEndpoint reale
+subscribe(eventId) inviato
+WebSocketSubscriptions popolata su DynamoDB
+SendStatusUpdate configurata con WebSocketManagementEndpoint reale
 ```
 
 ---
 
-## 13. Prima del push pubblico
+## 11. File da non versionare
 
-Eseguire sempre:
-
-```powershell
-git status
-```
-
-Verificare che non siano presenti file sensibili.
-
-Controllare in particolare:
+Prima di fare push, verificare che non siano presenti:
 
 ```text
 local.properties
-build/
 .gradle/
+build/
 app/build/
-keystore
+*.jks
+*.keystore
 credenziali
 endpoint reali privati
 ```
 
-Se serve cercare endpoint reali nel codice:
-
-```powershell
-git grep -n "execute-api"
-git grep -n "amazonaws.com"
-git grep -n "wss://"
-```
-
-Se questi valori sono solo placeholder, va bene. Se sono endpoint reali di demo privata, sostituirli prima del push.
+Questi file devono essere esclusi tramite `.gitignore`.
 
 ---
 
-## 14. Sintesi
+## 12. Checklist per un nuovo sviluppatore
 
-L'app Android e' il punto di interazione dell'utente con CITY.
-
-Responsabilita' principali:
+Prima di lavorare sull'app:
 
 ```text
-inviare emergenze manuali
-caricare immagini su S3 tramite presigned URL
-avviare test camera simulata
-ricevere stati real-time tramite WebSocket
-mostrare il completamento del workflow
+[ ] Ho aperto android/EmergencyMobileApp/ in Android Studio
+[ ] Il Gradle Sync e' completato
+[ ] Il backend AWS e' stato deployato
+[ ] Ho copiato gli output city-api in ApiConstants.kt
+[ ] Ho avviato l'app su dispositivo o emulatore
+[ ] Ho testato almeno un flusso manuale
+[ ] Ho verificato gli aggiornamenti WebSocket
 ```
 
-Il backend AWS gestisce invece:
+---
+
+## 13. Sintesi
+
+Questa cartella contiene solo la parte mobile del progetto CITY.
+
+L'app Android si occupa di:
 
 ```text
-elaborazione immagini
+raccogliere input dall'utente
+caricare eventuali immagini
+chiamare gli endpoint AWS
+ricevere stati real-time
+mostrare il risultato finale
+```
+
+Il backend AWS si occupa di:
+
+```text
+analisi immagine
 classificazione emergenza
 valutazione gravita'
 decisione finale
 notifiche
-persistenza dati
+salvataggio dati
 archiviazione
 ```
