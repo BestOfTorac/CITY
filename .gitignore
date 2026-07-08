@@ -31,6 +31,8 @@ venv/
 # Deployment packages
 deployment/
 *.zip
+!backend/lambda-zips/
+!backend/lambda-zips/*.zip
 
 # Large/generated experimental data
 experiments/raw-results/
