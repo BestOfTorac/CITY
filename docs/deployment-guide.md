@@ -16,7 +16,7 @@ Passo 3  - Caricare gli zip Lambda su S3
 Passo 4  - Recuperare endpoint IoT
 Passo 5  - Creare lo stack city-lambdas
 Passo 6  - Creare lo stack city-api
-Passo 7  - Aggiornare city-lambdas con WebSocketManagementEndpoint
+Passo 7  - Aggiornare city-lambdas con WebSocketManagementEndpoint reale
 Passo 8  - Creare lo stack city-workflow-iot
 Passo 9  - Creare dataset/ su S3 e caricare immagini
 Passo 10 - Confermare SNS
@@ -29,11 +29,11 @@ Passo 13 - Troubleshooting
 
 ## Passo 0 - File necessari
 
-Prima di iniziare assicurarsi di avere questi file.
+Prima di iniziare assicurarsi di avere questi file nella repository.
 
-### Template CloudFormation
+### 0.1 Template CloudFormation
 
-Percorso nella repository:
+Percorso:
 
 ```text
 infrastructure/cloudformation/
@@ -48,44 +48,54 @@ api-gateway.yaml
 workflow-iot-fixed.yaml
 ```
 
-### Pacchetti Lambda
+### 0.2 Zip Lambda gia' pronti
 
-Servono questi file `.zip`:
+Per semplificare il deploy, la repository contiene gia' gli zip Lambda pronti all'uso.
+
+Percorso consigliato:
 
 ```text
-receiveEmergency.zip
-GenerateMobileUploadUrl.zip
-MobileIngestion.zip
-cameraSimulator.zip
-lambdaIngestion.zip
-StartWorkflow.zip
-ValidateEvent.zip
-ContextualizeEvent.zip
-ClassifyEvent.zip
-EvaluateSeverity.zip
-DecisionLogic.zip
-StoreLogs.zip
-SendStatusUpdate.zip
-WebSocketHandler.zip
+backend/lambda-zips/
+```
+
+File richiesti:
+
+```text
+backend/lambda-zips/receiveEmergency.zip
+backend/lambda-zips/GenerateMobileUploadUrl.zip
+backend/lambda-zips/MobileIngestion.zip
+backend/lambda-zips/cameraSimulator.zip
+backend/lambda-zips/lambdaIngestion.zip
+backend/lambda-zips/StartWorkflow.zip
+backend/lambda-zips/ValidateEvent.zip
+backend/lambda-zips/ContextualizeEvent.zip
+backend/lambda-zips/ClassifyEvent.zip
+backend/lambda-zips/EvaluateSeverity.zip
+backend/lambda-zips/DecisionLogic.zip
+backend/lambda-zips/StoreLogs.zip
+backend/lambda-zips/SendStatusUpdate.zip
+backend/lambda-zips/WebSocketHandler.zip
 ```
 
 I nomi devono essere identici, comprese maiuscole e minuscole.
 
-### Progetto Android
+> Importante: CloudFormation non legge direttamente gli zip dalla repository GitHub. Gli zip presenti in `backend/lambda-zips/` devono essere caricati manualmente su S3 nel Passo 3.
 
-Percorso consigliato nella repository:
+### 0.3 Progetto Android
+
+Percorso consigliato:
 
 ```text
 android/EmergencyMobileApp/
 ```
 
-Il file da modificare dopo il deploy e':
+File da modificare dopo il deploy:
 
 ```text
 android/EmergencyMobileApp/app/src/main/java/com/toracshalby/emergencymobile/network/ApiConstants.kt
 ```
 
-### Dataset immagini
+### 0.4 Dataset immagini
 
 Preparare alcune immagini `.jpg`, `.jpeg` o `.png` per il test telecamera.
 
@@ -139,7 +149,7 @@ CloudFormation
 Caricare:
 
 ```text
-storage-messaging.yaml
+infrastructure/cloudformation/storage-messaging.yaml
 ```
 
 Cliccare `Next`.
@@ -163,9 +173,19 @@ EmergencyDataTableName = EmergencyData
 WebSocketSubscriptionsTableName = WebSocketSubscriptions
 EmergencyEventsQueueName = emergency-events-queue
 EmergencyAlertsTopicName = emergency-alerts-topic
-NotificationEmail1 = EMAIL_DA_CONFERMARE_PER_SNS
+NotificationEmail1 = EMAIL_DA_USARE_PER_RICEVERE_GLI_ALERT
 NotificationEmail2 = opzionale
 ```
+
+Il parametro:
+
+```text
+NotificationEmail1
+```
+
+deve essere valorizzato con una email reale, per esempio la mail dello studente che sta facendo il deploy. Questa email ricevera' le notifiche SNS quando il sistema decide di avvisare i soccorritori.
+
+Dopo la creazione dello stack, AWS inviera' una mail di conferma a questo indirizzo. La conferma viene fatta nel Passo 10.
 
 Se compare il parametro:
 
@@ -211,11 +231,15 @@ Il valore da usare subito dopo e':
 EmergencyImagesBucketName
 ```
 
+Questo e' il nome esatto del bucket S3 creato da CloudFormation.
+
+Non bisogna inventare il nome del bucket e non bisogna crearne un altro manualmente. Nel Passo 3 bisogna aprire proprio il bucket indicato da questo output.
+
 ---
 
 ## Passo 3 - Caricare gli zip Lambda su S3
 
-### 3.1 Aprire il bucket creato
+### 3.1 Aprire il bucket creato dallo stack precedente
 
 Andare su:
 
@@ -225,7 +249,13 @@ S3
 -> EmergencyImagesBucketName
 ```
 
-Sostituire `EmergencyImagesBucketName` con il valore ottenuto dagli output dello stack precedente.
+Sostituire `EmergencyImagesBucketName` con il valore ottenuto negli output del Passo 2.
+
+Esempio generico:
+
+```text
+city-dev-emergency-images-ACCOUNT-us-east-1
+```
 
 ### 3.2 Creare il percorso deployment/lambdas/
 
@@ -241,15 +271,21 @@ Entrare in `deployment` e creare:
 lambdas
 ```
 
-Percorso finale:
+Percorso finale su S3:
 
 ```text
 deployment/lambdas/
 ```
 
-### 3.3 Caricare gli zip
+### 3.3 Caricare gli zip dalla repository
 
-Caricare tutti i pacchetti Lambda dentro:
+Prendere gli zip dalla cartella locale:
+
+```text
+backend/lambda-zips/
+```
+
+e caricarli su S3 dentro:
 
 ```text
 deployment/lambdas/
@@ -276,7 +312,7 @@ deployment/lambdas/WebSocketHandler.zip
 
 ### 3.4 Nota su LambdaCodePrefix
 
-Nel deploy consigliato gli zip sono in:
+Nel deploy consigliato gli zip sono caricati su S3 in:
 
 ```text
 deployment/lambdas/
@@ -288,7 +324,7 @@ Quindi, nello stack Lambda, il parametro dovra' essere:
 LambdaCodePrefix = deployment/lambdas/
 ```
 
-Se invece gli zip vengono caricati direttamente nella root del bucket, il parametro deve essere vuoto.
+Se invece gli zip vengono caricati direttamente nella root del bucket, il parametro deve essere vuoto. Questa guida usa sempre `deployment/lambdas/`.
 
 ---
 
@@ -338,8 +374,17 @@ CloudFormation
 Caricare:
 
 ```text
-lambdas-update-websocket.yaml
+infrastructure/cloudformation/lambdas-update-websocket.yaml
 ```
+
+Questo template viene usato due volte:
+
+```text
+1. nel Passo 5 per creare tutte le Lambda;
+2. nel Passo 7 per aggiornare solo il WebSocketManagementEndpoint.
+```
+
+Il motivo e' che il WebSocketManagementEndpoint reale esiste solo dopo aver creato lo stack `city-api`, quindi al primo deploy viene lasciato un valore temporaneo e poi viene aggiornato.
 
 ### 5.2 Nome stack
 
@@ -368,7 +413,7 @@ Per il parametro:
 WebSocketManagementEndpoint
 ```
 
-lasciare temporaneamente il valore placeholder presente nel template. Verrà aggiornato dopo la creazione dello stack `city-api`.
+lasciare temporaneamente il valore placeholder presente nel template. Verra' aggiornato nel Passo 7.
 
 ### 5.4 Creazione
 
@@ -432,7 +477,7 @@ CloudFormation
 Caricare:
 
 ```text
-api-gateway.yaml
+infrastructure/cloudformation/api-gateway.yaml
 ```
 
 ### 6.2 Nome stack
@@ -488,7 +533,7 @@ Questi valori servono nei passi successivi.
 
 ---
 
-## Passo 7 - Aggiornare city-lambdas con WebSocketManagementEndpoint
+## Passo 7 - Aggiornare city-lambdas con WebSocketManagementEndpoint reale
 
 Lo stack `city-lambdas` deve essere aggiornato con il valore reale di:
 
@@ -509,7 +554,7 @@ CloudFormation
 -> Update
 ```
 
-### 7.2 Caricare lo stesso template
+### 7.2 Ricaricare lo stesso template Lambda
 
 Scegliere:
 
@@ -518,11 +563,13 @@ Replace current template
 -> Upload a template file
 ```
 
-Caricare:
+Caricare di nuovo:
 
 ```text
-lambdas-update-websocket.yaml
+infrastructure/cloudformation/lambdas-update-websocket.yaml
 ```
+
+E' corretto usare lo stesso file del Passo 5. In questo passaggio non si stanno creando nuove Lambda: si sta aggiornando lo stesso stack, cambiando il valore della variabile d'ambiente usata da `SendStatusUpdate`.
 
 ### 7.3 Aggiornare il parametro
 
@@ -580,7 +627,7 @@ CloudFormation
 Caricare:
 
 ```text
-workflow-iot-fixed.yaml
+infrastructure/cloudformation/workflow-iot-fixed.yaml
 ```
 
 ### 8.2 Nome stack
@@ -759,9 +806,9 @@ Sostituire:
 
 ```text
 OUTPUT_WEBSOCKET_ENDPOINT      con WebSocketEndpoint
-OUTPUT_UPLOAD_URL_ENDPOINT    con UploadUrlEndpoint
-OUTPUT_EMERGENCY_ENDPOINT     con EmergencyEndpoint
-OUTPUT_CAMERA_TEST_ENDPOINT   con CameraTestEndpoint
+OUTPUT_UPLOAD_URL_ENDPOINT     con UploadUrlEndpoint
+OUTPUT_EMERGENCY_ENDPOINT      con EmergencyEndpoint
+OUTPUT_CAMERA_TEST_ENDPOINT    con CameraTestEndpoint
 ```
 
 ### 11.4 Build e run
@@ -858,7 +905,7 @@ CloudWatch Logs -> lambdaIngestion
 
 ## Passo 13 - Troubleshooting
 
-### Problema: city-lambdas fallisce per zip non trovato
+### 13.1 city-lambdas fallisce per zip non trovato
 
 Controllare:
 
@@ -887,7 +934,7 @@ Se gli zip sono nella root:
 LambdaCodePrefix = vuoto
 ```
 
-### Problema: il test telecamera non funziona
+### 13.2 Il test telecamera non funziona
 
 Controllare:
 
@@ -906,7 +953,7 @@ CloudWatch Logs -> cameraSimulator
 CloudWatch Logs -> lambdaIngestion
 ```
 
-### Problema: non arrivano email
+### 13.3 Non arrivano email
 
 Controllare:
 
@@ -916,7 +963,7 @@ email corretta
 topic emergency-alerts-topic esiste
 ```
 
-### Problema: l'app non arriva al completamento
+### 13.4 L'app non arriva al completamento
 
 Controllare:
 
@@ -928,7 +975,7 @@ DynamoDB WebSocketSubscriptions
 CloudWatch Logs di SendStatusUpdate
 ```
 
-### Problema: Step Functions non parte
+### 13.5 Step Functions non parte
 
 Controllare:
 
