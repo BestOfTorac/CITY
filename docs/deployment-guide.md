@@ -89,7 +89,7 @@ Percorso consigliato:
 android/EmergencyMobileApp/
 ```
 
-File da modificare dopo il deploy:
+File da modificare dopo il deploy (spiegate nel dettaglio nel Passo 11):
 
 ```text
 android/EmergencyMobileApp/app/src/main/java/com/toracshalby/emergencymobile/network/ApiConstants.kt
