@@ -1,4 +1,4 @@
-# CITY - Cloud-based Intelligent emergency response sYstem
+# CITY - Sistema intelligente per emergenze in Smart City
 
 CITY è un sistema cloud-native, serverless e event-driven pensato per rendere più intelligente la gestione delle emergenze in una Smart City.
 
