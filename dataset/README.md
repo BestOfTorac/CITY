@@ -16,4 +16,3 @@ dataset/accident_01.jpg
 dataset/normal_01.jpg
 ```
 
-Per evitare repository troppo pesanti, non caricare dataset molto grandi su GitHub.
